@@ -120,5 +120,70 @@ def number_to_pattern(index, k):
     return prefix_pattern + symbol
 
 
+def get_freq_array(text, k):
+    freq_array = np.array([0] * 4**k)
+    for i in range(0, len(text) - k+1):
+        pattern = text[i:i+k]
+        index = pattern_to_number(pattern)
+        freq_array[index] += 1
+    return freq_array
 
-print(number_to_pattern(7, 6))
+
+# Put it all together to implement a faster version of finding the most frequent kmers using a frequency array
+# However, this implementation is only faster for small values of k.
+# Essentially, FrequentWords (FW) is (O((|Text|^2) * k)) and FasterFrequentWords (FFW) is (O((|Text|*k) + ((4^k) * k))).
+# For all values of k such that 4^k  < |Text|^2 - |Text|, FFW will always be faster (lesser steps to execute) than FW.
+# For all values of  k such that 4^k  > |Text|^2 - |Text|, FFW will always be slower (more steps to execute) than FW.
+
+# Finally, an implementation that first sorts the frequency is introduced. Given a string, list all of its kmers in the
+# order they appear, and convert these to their index from symbol to number. Sorting this array causes all of the same
+# kmers (via their indices) to clump together. So the most frequent kmers are those that have the longest run.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def faster_freq_words(text, k):
+    freq_patterns = []
+    freq_array = get_freq_array(text, k)
+    max_count = max(freq_array)
+    for i in range(0, len(freq_array)):
+        if freq_array[i] == max_count:
+            freq_patterns.append(number_to_pattern(i, k))
+    return freq_patterns
+
+
+def sorted_freq_words(text, k):
+    freq_patterns = []
+    count_array = np.array([0] * 4**k)
+    index_array = np.array([0] * 4**k)
+
+    for i in range(len(text) - k+1):
+        pattern = text[i:i+k]
+        index_array[i] = pattern_to_number(pattern)
+        count_array[i] = 1
+        print(i, pattern, count_array, index_array)
+
+    # print(index_array)
+    # index_array[::-1].sort()
+    # print(index_array)
+
+    # for i in range(1, len(text) - k+1):
+    #     if index_array[i] == index_array[i-1]:
+    #         count_array[i] += count_array[i-1]
+    #
+    # max_count = max(count_array)
+    #
+    # for i in range(0, len(text) - k+1):
+    #     if count_array[i] == max_count:
+    #         freq_patterns.append(number_to_pattern(index_array[i], k))
+
+    return freq_patterns
+
+
+
+
+
+
+
+
+
+print(sorted_freq_words("AAACGGG", 2))
