@@ -138,6 +138,8 @@ def get_freq_array(text, k):
 # Finally, an implementation that first sorts the frequency is introduced. Given a string, list all of its kmers in the
 # order they appear, and convert these to their index from symbol to number. Sorting this array causes all of the same
 # kmers (via their indices) to clump together. So the most frequent kmers are those that have the longest run.
+
+# However, the simplest implementation is to take advantage of python's dictionary data structure
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -160,30 +162,32 @@ def sorted_freq_words(text, k):
         pattern = text[i:i+k]
         index_array[i] = pattern_to_number(pattern)
         count_array[i] = 1
-        print(i, pattern, count_array, index_array)
 
-    # print(index_array)
-    # index_array[::-1].sort()
-    # print(index_array)
+    index_array[::-1].sort()  # decreasing sort
 
-    # for i in range(1, len(text) - k+1):
-    #     if index_array[i] == index_array[i-1]:
-    #         count_array[i] += count_array[i-1]
-    #
-    # max_count = max(count_array)
-    #
-    # for i in range(0, len(text) - k+1):
-    #     if count_array[i] == max_count:
-    #         freq_patterns.append(number_to_pattern(index_array[i], k))
+    for i in range(1, len(text) - k+1):
+        if index_array[i] == index_array[i-1]:
+            count_array[i] += count_array[i-1]
+
+    max_count = max(count_array)
+
+    for i in range(0, len(text) - k+1):
+        if count_array[i] == max_count:
+            freq_patterns.append(number_to_pattern(index_array[i], k))
 
     return freq_patterns
 
 
+def get_freq_dict(text, k):
+    freq_dict = {}
+    for i in range(0, len(text) - k+1):
+        pattern = text[i:i+k]
+        if pattern not in freq_dict:
+            freq_dict[pattern] = 1
+        else:
+            freq_dict[pattern] += 1
+    return freq_dict
 
 
+def get_freq_kmer_dict(text, k):
 
-
-
-
-
-print(sorted_freq_words("AAACGGG", 2))
