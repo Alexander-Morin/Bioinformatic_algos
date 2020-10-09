@@ -6,6 +6,7 @@ import numpy as np
 # retrieve the reverse complement of a DNA string.
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def pattern_count(text, pattern):
     count = 0
     k = len(pattern)
@@ -190,4 +191,33 @@ def get_freq_dict(text, k):
 
 
 def get_freq_kmer_dict(text, k):
+    freq_dict = get_freq_dict(text, k)
+    freq_pattern = []
+    max_count = max(freq_dict.values())
+    for kmer in freq_dict:
+        if freq_dict[kmer] == max_count:
+            freq_pattern.append(kmer)
+    return freq_pattern
+
+
+# From here, the idea of finding clumped kmers within a window is introduced in order to find clusters of DNaA boxes for
+# the oriC. A naive solution defines that a kmer of size k forms an (l, t)-clump, where L the size of a window to search
+# for clusters of kmers and t is the minimum amount of time the kmer must appear.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def find_clump_kmers(genome, l, k, t):
+    freq_patterns = []
+    for i in range(0, len(genome) - l+1):
+        window = genome[i:i+l]
+        freq_dict = get_freq_dict(window, k)
+        for kmer in freq_dict:
+            if freq_dict[kmer] >= t and kmer not in freq_patterns:
+                freq_patterns.append(kmer)
+    return freq_patterns
+
+
+# However, this is inefficient, as the windows overlap.
+
+
 
