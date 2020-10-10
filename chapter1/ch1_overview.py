@@ -217,7 +217,55 @@ def find_clump_kmers(genome, l, k, t):
     return freq_patterns
 
 
-# However, this is inefficient, as the windows overlap.
+# However, this is inefficient as the windows overlap, such that only the first and last kmers of adjacent windows
+# differ. Leverage this fact: only build the frequency array once, then update the counts as we slide down genome
+
+
+def faster_clump_kmers(genome, l, k, t):
+    freq_patterns = []
+    clump_array = np.array([0] * 4**k)
+    text = genome[0:l]
+    freq_array = get_freq_array(text, k)
+    for i in range(0, len(freq_array)):
+        if freq_array[i] >= t:
+            clump_array[i] = 1
+    for i in range(1, len(genome) - l+1):
+        first_pattern = genome[i-1:i-1+k]
+        index = pattern_to_number(first_pattern)
+        freq_array[index] -= 1
+        last_pattern = genome[i+l-k:i+l]
+        index = pattern_to_number(last_pattern)
+        freq_array[index] += 1
+        if freq_array[index] >= t:
+            clump_array[index] = 1
+    for i in range(len(clump_array)):
+        if clump_array[i] == 1:
+            freq_patterns.append(number_to_pattern(i, k))
+    return freq_patterns
+
+
+# To this point of the chapter, the focus was finding oriC in a bacterial genome. The authors then note that you can
+# apply the clump finding approach and still find a wealth of results. They then introduce the fact that DNA replication
+# in prokaryotes is done via replication forks, and the asynchronous nature of the forward and reverse strands results
+# in differential deamination of C->T (which results in a T-G pairing that gets repaired to T-A). You can use this
+# skew to further pinpoint sites of replication.
+
+
+def get_skew_array(genome):
+    skew_array = np.array([0] * (len(genome) + 1))
+    for i in range(len(genome)):
+        if genome[i] == "C":
+            skew_array[i+1] = skew_array[i] - 1
+        elif genome[i] == "G":
+            skew_array[i + 1] = skew_array[i] + 1
+        else:
+            skew_array[i + 1] = skew_array[i]
+    return skew_array
+
+
+def get_min_skew(genome):
+    skew_array = get_skew_array(genome)
+    return np.where(skew_array == skew_array.min())
 
 
 
