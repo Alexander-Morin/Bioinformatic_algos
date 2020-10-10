@@ -268,4 +268,47 @@ def get_min_skew(genome):
     return np.where(skew_array == skew_array.min())
 
 
+# Until now, the pattern must have been an exact match. The book mentions that an DNaA box may have a slight mismatch
+# to the queried pattern. Introduces Hamming distance as a means of comparing the differences between two strings. Use
+# this distance to threshold how much the strings are allowed to differ, and find the most frequent kmer while allowing
+# mismatches. Note that this means that the most frequent kmer may have no exact matches.
+
+
+def get_hamming_distance(str1, str2):
+    # return sum([pattern1[i] != pattern2[i] for i in range(0, len(pattern1))])
+    str1 = list(str1)
+    str2 = list(str2)
+    assert len(str1) == len(str2)
+    dist = 0
+    for i in range(len(str1)):
+        if str1[i] != str2[i]:
+            dist += 1
+    return dist
+
+
+def approx_pattern_match(pattern, text, d):
+    ix = []
+    k = len(pattern)
+    for i in range(0, len(text) - k+1):
+        kmer = text[i:i+k]
+        if get_hamming_distance(kmer, pattern) <= d:
+            ix.append(i)
+    return ix
+
+
+def approx_pattern_count(pattern, text, d):
+    count = 0
+    k = len(pattern)
+    for i in range(0, len(text) - k + 1):
+        kmer = text[i:i + k]
+        if get_hamming_distance(kmer, pattern) <= d:
+            count += 1
+    return count
+
+
+
+
+
+
+
 
