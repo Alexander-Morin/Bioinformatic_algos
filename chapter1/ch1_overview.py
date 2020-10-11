@@ -306,9 +306,44 @@ def approx_pattern_count(pattern, text, d):
     return count
 
 
+# A naive approach would be to generate all of the 4**k kmers and see how many approximately match the pattern, but this
+# is highly inefficient, as many of these kmers, as well as their d-mismatches, have no match to the pattern. Instead,
+# consider the 'd-neighbourhood' of kmers within pattern, which permutes the allowed (up to d mismatches) approx
+# matches. Can implement a recursive function that strips to the 'suffix' of the pattern. If we consider a (k-1)mer
+# pattern' that belongs to the neighbours(suffix(pattern), d), we know that the Hamming distance between pattern' and
+# suffix(pattern) is equal to or less than d. If it's equal, we can add the first symbol of pattern to pattern' to
+# obtain a kmer belonging to neighbours(pattern, d). If the distance is less than d, we can add any symbol to the start
+# of pattern' and obtain a kmer belonging to neighbours(pattern, d).
 
 
+def immediate_neighbours(pattern):
+    neighbourhood = []
+    pattern = list(pattern)
+    for i in range(0, len(pattern)):
+        nucleotides = ["A", "C", "G", "T"]
+        symbol = pattern[i]
+        nucleotides.remove(symbol)
+        for j in nucleotides:
+            neighbour = pattern
+            neighbour[i] = j
+            neighbourhood.append("".join(neighbour))
+    return neighbourhood
 
 
+def neighbours(pattern, d):
+    if d == 0:
+        return pattern
+    if len(pattern) == 1:
+        return ["A", "C", "G", "T"]
+    neighbourhood = []
+    suffix_neighbours = neighbours(pattern[1:], d)
+    for text in suffix_neighbours:
+        if get_hamming_distance(pattern[1:], text) < d:
+            for nucleotide in ["A", "C", "G", "T"]:
+                neighbourhood.append(nucleotide + text)
+            else:
+                neighbourhood.append(pattern[0] + text)
+    return neighbourhood
 
 
+print(neighbours("ACT", 1))
