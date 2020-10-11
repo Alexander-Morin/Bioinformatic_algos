@@ -219,6 +219,7 @@ def find_clump_kmers(genome, l, k, t):
 
 # However, this is inefficient as the windows overlap, such that only the first and last kmers of adjacent windows
 # differ. Leverage this fact: only build the frequency array once, then update the counts as we slide down genome
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def faster_clump_kmers(genome, l, k, t):
@@ -249,6 +250,7 @@ def faster_clump_kmers(genome, l, k, t):
 # in prokaryotes is done via replication forks, and the asynchronous nature of the forward and reverse strands results
 # in differential deamination of C->T (which results in a T-G pairing that gets repaired to T-A). You can use this
 # skew to further pinpoint sites of replication.
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_skew_array(genome):
@@ -272,6 +274,7 @@ def get_min_skew(genome):
 # to the queried pattern. Introduces Hamming distance as a means of comparing the differences between two strings. Use
 # this distance to threshold how much the strings are allowed to differ, and find the most frequent kmer while allowing
 # mismatches. Note that this means that the most frequent kmer may have no exact matches.
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_hamming_distance(str1, str2):
@@ -314,6 +317,7 @@ def approx_pattern_count(pattern, text, d):
 # suffix(pattern) is equal to or less than d. If it's equal, we can add the first symbol of pattern to pattern' to
 # obtain a kmer belonging to neighbours(pattern, d). If the distance is less than d, we can add any symbol to the start
 # of pattern' and obtain a kmer belonging to neighbours(pattern, d).
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def immediate_neighbours(pattern):
@@ -332,7 +336,7 @@ def immediate_neighbours(pattern):
 
 def neighbours(pattern, d):
     if d == 0:
-        return pattern
+        return [pattern]
     if len(pattern) == 1:
         return ["A", "C", "G", "T"]
     neighbourhood = []
@@ -346,4 +350,60 @@ def neighbours(pattern, d):
     return neighbourhood
 
 
-print(neighbours("ACT", 1))
+# Can now create an implementation of finding the most frequent kmers, while allowing for mismatches. Here, instead of
+# generating all kmers, we only consider those that are 'close' to kmer in text (has up to d mismatches). Use an array
+# of size 4^k to keep track of patterns that are within d to some kmer in text. This allows only having to call approx
+# pattern count to close kmers instead of all kmers.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def freq_kmers_mismatches(text, k, d):
+    freq_patterns = []
+    count_array = np.array([0] * 4**k)
+    close_array = np.array([0] * 4**k)
+    for i in range(0, len(text) - k+1):
+        neighbourhood = neighbours(text[i:i+k], d)
+        for pattern in neighbourhood:
+            index = pattern_to_number(pattern)
+            close_array[index] = 1
+    for i in range(len(close_array)):
+        if close_array[i] == 1:
+            pattern = number_to_pattern(i, k)
+            count_array[i] = approx_pattern_count(pattern, text, d)
+    max_count = max(count_array)
+    for i in range(len(count_array)):
+        if count_array[i] == max_count:
+            freq_patterns.append(number_to_pattern(i, k))
+    return freq_patterns, max_count
+
+
+# Can further speed up the mismatch problem using sorting
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def freq_kmers_mismatch_sort(text, k, d):
+    freq_patterns = []
+    neighbourhoods = []
+    count_array = np.array([0] * 4**k)
+    index_array = np.array([0] * 4**k)
+    for i in range(0, len(text) - k+1):
+        pattern = text[i:i+k]
+        neighbourhoods.append(neighbours(pattern, d))
+    for i in range(len(neighbourhoods)):
+        pattern = neighbourhoods[i]
+        index_array[i] = pattern_to_number(neighbourhoods[i])
+        count_array[i] = 1
+    index_array.sort()
+    for i in range(len(neighbourhoods) - 1):
+        if index_array[i] == index_array[i+1]:
+            count_array[i+1] = count_array[i] + 1
+    max_count = max(count_array)
+    for i in range(len(neighbourhoods)):
+        if count_array[i] == max_count:
+            freq_patterns.append(number_to_pattern(index_array[i], k))
+    return freq_patterns
+
+
+# print(freq_kmers_mismatch_sort("ACTGTCCAACTACT", 3, 1))
+
+
