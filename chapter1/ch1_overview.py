@@ -227,9 +227,11 @@ def faster_clump_kmers(genome, l, k, t):
     clump_array = np.array([0] * 4**k)
     text = genome[0:l]
     freq_array = get_freq_array(text, k)
+
     for i in range(0, len(freq_array)):
         if freq_array[i] >= t:
             clump_array[i] = 1
+
     for i in range(1, len(genome) - l+1):
         first_pattern = genome[i-1:i-1+k]
         index = pattern_to_number(first_pattern)
@@ -239,9 +241,11 @@ def faster_clump_kmers(genome, l, k, t):
         freq_array[index] += 1
         if freq_array[index] >= t:
             clump_array[index] = 1
+
     for i in range(len(clump_array)):
         if clump_array[i] == 1:
             freq_patterns.append(number_to_pattern(i, k))
+
     return freq_patterns
 
 
@@ -336,7 +340,7 @@ def immediate_neighbours(pattern):
 
 def neighbours(pattern, d):
     if d == 0:
-        return [pattern]
+        return pattern
     if len(pattern) == 1:
         return ["A", "C", "G", "T"]
     neighbourhood = []
@@ -361,49 +365,67 @@ def freq_kmers_mismatches(text, k, d):
     freq_patterns = []
     count_array = np.array([0] * 4**k)
     close_array = np.array([0] * 4**k)
+
     for i in range(0, len(text) - k+1):
         neighbourhood = neighbours(text[i:i+k], d)
         for pattern in neighbourhood:
             index = pattern_to_number(pattern)
             close_array[index] = 1
+
     for i in range(len(close_array)):
         if close_array[i] == 1:
             pattern = number_to_pattern(i, k)
             count_array[i] = approx_pattern_count(pattern, text, d)
+
     max_count = max(count_array)
+
     for i in range(len(count_array)):
         if count_array[i] == max_count:
             freq_patterns.append(number_to_pattern(i, k))
+
     return freq_patterns, max_count
 
 
-# Can further speed up the mismatch problem using sorting
+# Can further speed up the mismatch problem using sorting. Create a neighbourhood array that contains every d-neighbour
+# of each kmer in text. Build an index and count array of length equal to all of the generated kmers. Populate the
+# index array with the pattern to number indices, and as before, sorting this array causes runs of the same kmer to
+# clump together, which can be tracked using the count array.
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def freq_kmers_mismatch_sort(text, k, d):
     freq_patterns = []
-    neighbourhoods = []
-    count_array = np.array([0] * 4**k)
-    index_array = np.array([0] * 4**k)
+    neighbourhood = []
     for i in range(0, len(text) - k+1):
         pattern = text[i:i+k]
-        neighbourhoods.append(neighbours(pattern, d))
-    for i in range(len(neighbourhoods)):
-        pattern = neighbourhoods[i]
-        index_array[i] = pattern_to_number(neighbourhoods[i])
+        for j in neighbours(pattern, d):
+            neighbourhood.append(j)
+
+    index_array = np.array([0] * len(neighbourhood))
+    count_array = np.array([0] * len(neighbourhood))
+
+    for i in range(len(neighbourhood)):
+        pattern = neighbourhood[i]
+        index_array[i] = pattern_to_number(pattern)
         count_array[i] = 1
-    index_array.sort()
-    for i in range(len(neighbourhoods) - 1):
+
+    index_array[::-1].sort()  # decreasing sort
+
+    for i in range(len(neighbourhood)-1):
         if index_array[i] == index_array[i+1]:
             count_array[i+1] = count_array[i] + 1
+
     max_count = max(count_array)
-    for i in range(len(neighbourhoods)):
+
+    for i in range(len(neighbourhood)-1):
         if count_array[i] == max_count:
             freq_patterns.append(number_to_pattern(index_array[i], k))
-    return freq_patterns
+
+    return freq_patterns, max_count
 
 
-# print(freq_kmers_mismatch_sort("ACTGTCCAACTACT", 3, 1))
+# Finally, consider the reverse complement (using the dict implementation)
+
+print(freq_kmers_mismatch_sort("GCG", 3, 1))
 
 
