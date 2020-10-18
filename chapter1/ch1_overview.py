@@ -340,17 +340,17 @@ def immediate_neighbours(pattern):
 
 def neighbours(pattern, d):
     if d == 0:
-        return pattern
+        return {pattern}
     if len(pattern) == 1:
-        return ["A", "C", "G", "T"]
-    neighbourhood = []
+        return {"A", "C", "G", "T"}
+    neighbourhood = set()
     suffix_neighbours = neighbours(pattern[1:], d)
     for text in suffix_neighbours:
         if get_hamming_distance(pattern[1:], text) < d:
             for nucleotide in ["A", "C", "G", "T"]:
-                neighbourhood.append(nucleotide + text)
-            else:
-                neighbourhood.append(pattern[0] + text)
+                neighbourhood.add(nucleotide + text)
+        else:
+            neighbourhood.add(pattern[0] + text)
     return neighbourhood
 
 
@@ -424,27 +424,31 @@ def freq_kmers_mismatch_sort(text, k, d):
     return freq_patterns, max_count
 
 
-# Finally, consider the reverse complement (using the dict implementation)
+# Finally, consider the reverse complement
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def freq_kmers_mismatch_sort_rev(text, k, d):
     freq_patterns = []
-    neighbourhood = {}
-    for i in range(0, len(text) - k+1):
+    neighbourhood_forward = {}
+    neighbourhood_rev = {}
+
+    for i in range(0, len(text) - k + 1):
         pattern = text[i:i+k]
+        rev_pattern = get_reverse_complement(pattern)
         for j in neighbours(pattern, d):
-            if j in neighbourhood:
-                neighbourhood[j] += 1
+            if j in neighbourhood_forward:
+                neighbourhood_forward[j] += 1
             else:
-                neighbourhood[j] = 1
-        for j in neighbours(get_reverse_complement(pattern), d):
-            if j in neighbourhood:
-                neighbourhood[j] += 1
+                neighbourhood_forward[j] = 1
+        for j in neighbours(rev_pattern, d):
+            if j in neighbourhood_rev:
+                neighbourhood_rev[j] += 1
             else:
-                neighbourhood[j] = 1
-    max_count = max(neighbourhood.values())
-    for i in neighbourhood:
-        if neighbourhood[i] == max_count:
-            freq_patterns.append(i)
-    return freq_patterns, max_count
+                neighbourhood_rev[j] = 1
+    return neighbourhood_forward, neighbourhood_forward
+
+
+print(neighbours("ACG", 1))
+# set = {"A", "C"}
+# print(type(set))
