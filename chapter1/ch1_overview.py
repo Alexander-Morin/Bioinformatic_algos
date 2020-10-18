@@ -425,7 +425,26 @@ def freq_kmers_mismatch_sort(text, k, d):
 
 
 # Finally, consider the reverse complement (using the dict implementation)
+# ----------------------------------------------------------------------------------------------------------------------
 
-print(freq_kmers_mismatch_sort("GCG", 3, 1))
 
-
+def freq_kmers_mismatch_sort_rev(text, k, d):
+    freq_patterns = []
+    neighbourhood = {}
+    for i in range(0, len(text) - k+1):
+        pattern = text[i:i+k]
+        for j in neighbours(pattern, d):
+            if j in neighbourhood:
+                neighbourhood[j] += 1
+            else:
+                neighbourhood[j] = 1
+        for j in neighbours(get_reverse_complement(pattern), d):
+            if j in neighbourhood:
+                neighbourhood[j] += 1
+            else:
+                neighbourhood[j] = 1
+    max_count = max(neighbourhood.values())
+    for i in neighbourhood:
+        if neighbourhood[i] == max_count:
+            freq_patterns.append(i)
+    return freq_patterns, max_count
