@@ -8,7 +8,7 @@
 # Output is kmers separated by a space
 # ATGT ACAT
 
-# Usage: IJ_freq_words_mismatch_reversecomplement.py input.txt
+# Usage: python3 IJ_freq_words_mismatch_reversecomplement.py input.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
 import sys
