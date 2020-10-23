@@ -6,7 +6,6 @@
 # 1
 
 # Output are the neighbours, separated by new line
-# ATGT ACAT
 
 # Usage: python3 1N_generate_string_d-neighbourhood.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
@@ -75,3 +74,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
