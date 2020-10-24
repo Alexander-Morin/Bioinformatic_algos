@@ -10,3 +10,6 @@ import numpy as np
 # ----------------------------------------------------------------------------------------------------------------------
 
 def motif_enumeration(dna, k, d):
+    freq_patterns = []
+    for i in range(len(dna) - k+1):
+        pattern

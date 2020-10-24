@@ -6,7 +6,7 @@
 # 1
 
 # Output are the neighbours, separated by new line
-
+    
 # Usage: python3 1N_generate_string_d-neighbourhood.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
