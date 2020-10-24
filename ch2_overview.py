@@ -1,6 +1,7 @@
 # Chapter 2 is focused on finding DNA motifs
 
-import numpy as np
+import sys
+from ch1_overview import *
 
 # Review: There are 4^k possible kmers. There are L - k + 1 kmers in a string of length L.
 # So, the expected count of occurrences of a kmer appearing in 500x 1000bp sequences is:
@@ -9,7 +10,20 @@ import numpy as np
 # Brute force solution for finding all (k, d) motifs in a collection of strings
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 def motif_enumeration(dna, k, d):
-    freq_patterns = []
-    for i in range(len(dna) - k+1):
-        pattern
+    all_neighbourhoods = [[] for i in range(len(dna))]
+    for i in range(len(dna)):
+        for j in range(len(dna[i]) - k+1):
+            kmer = dna[i][j:j+k]
+            neighbourhood = neighbours(kmer, d)
+            for pattern in neighbourhood:
+                all_neighbourhoods[i].append(pattern)
+    result = set(all_neighbourhoods[0])
+    for s in all_neighbourhoods[1:]:
+        result.intersection_update(s)
+    return " ".join(result)
+
+
+
+# print(motif_enumeration(["ATTTGGC", "TGCCTTA", "CGGTATC", "GAAAATT"], 3, 1))
