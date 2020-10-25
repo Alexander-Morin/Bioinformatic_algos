@@ -2,6 +2,7 @@
 
 import ch1_overview as ch1
 import numpy as np
+from collections import Counter
 
 # Review: There are 4^k possible kmers. There are L - k + 1 kmers in a string of length L.
 # So, the expected count of occurrences of a kmer appearing in 500x 1000bp sequences is:
@@ -34,3 +35,39 @@ def motif_enumeration(dna, k, d):
 # A 4 x k count matrix, count(motifs), giving the column-wise occurrences of the nucleotides
 # A profile matrix, profile(motifs), which divides these counts by t, the number of rows in motifs
 # A consensus string, consensus(motifs), of the most popular motifs in each column of the motif matrix
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_motif_array(motifs):
+    array = np.empty((len(motifs), len(motifs[0])), dtype=str)  # initialize empty 2d array
+    for i in range(len(motifs)):
+        for j in range(len(motifs[i])):
+            array[i, j] = motifs[i][j]
+    return array
+
+
+def score_motifs(motifs):
+    motif_array = get_motif_array(motifs)
+    for i in range(motif_array.shape[1]):
+        counts = Counter(motif_array[:, i])
+        print(counts)
+
+
+
+motifs = [
+    "TCGGGGGTTTTT",
+    "CCGGTGACTTAC",
+    "ACGGGGATTTTC",
+    "TTGGGGACTTTT",
+    "ATGGGGACTTCC",
+    "TCGGGGACTTCC",
+    "TCGGGGATTCAT",
+    "TAGGGGATTCCT",
+    "TAGGGGAACTAC",
+    "TCGGGTATAACC"
+]
+
+# test = get_motif_array(motifs)
+# count = Counter(test[:, 0])
+# print(max(count.values()))
+print(score_motifs(motifs))
