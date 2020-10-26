@@ -31,7 +31,8 @@ def motif_enumeration(dna, k, d):
 # However, this requires that every DNA string must contain a (k, d) motif, otherwise it will not be selected. To move
 # towards a better solution, consider t DNA strings of length n, and select a kmer from each string to form a
 # t x k motif matrix. From this matrix, find the most frequent nucleotide per column. The end goal is to find a means
-# to find the most conserved motif. First, we must define a score, which we want to minimize. This involves:
+# to get the most conserved motif. First, we must define a score, which we want to minimize. This involves:
+
 # A 4 x k count matrix, count(motifs), giving the column-wise occurrences of the nucleotides
 # A profile matrix, profile(motifs), which divides these counts by t, the number of rows in motifs
 # A consensus string, consensus(motifs), of the most popular motifs in each column of the motif matrix
@@ -48,9 +49,40 @@ def get_motif_array(motifs):
 
 def score_motifs(motifs):
     motif_array = get_motif_array(motifs)
+    scores = []
     for i in range(motif_array.shape[1]):
         counts = Counter(motif_array[:, i])
-        print(counts)
+        scores.append(len(motif_array[:, 0]) - max(counts.values()))
+    return sum(scores)
+
+
+def count_motifs(motifs):
+    motif_array = get_motif_array(motifs)
+    a = []
+    c = []
+    g = []
+    t = []
+    for column in range(motif_array.shape[1]):
+        nucleotides = list(motif_array[:, column])
+        a.append(nucleotides.count("A"))
+        c.append(nucleotides.count("C"))
+        g.append(nucleotides.count("G"))
+        t.append(nucleotides.count("T"))
+    return np.array([a, c, g, t])
+
+
+def profile_motifs(motifs):
+    counts = count_motifs(motifs)
+    return counts / len(motifs)
+
+
+def get_consensus_motifs(motifs):
+    consensus = []
+    motif_array = get_motif_array(motifs)
+    for i in range(motif_array.shape[1]):
+        nucleotides = list(motif_array[:, i])
+        print(max(nucleotides, key=nucleotides.count))
+    return consensus
 
 
 
@@ -70,4 +102,6 @@ motifs = [
 # test = get_motif_array(motifs)
 # count = Counter(test[:, 0])
 # print(max(count.values()))
-print(score_motifs(motifs))
+print(count_motifs(motifs))
+print(profile_motifs(motifs))
+print(get_consensus_motifs(motifs))
