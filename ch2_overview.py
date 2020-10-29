@@ -3,6 +3,7 @@
 import ch1_overview as ch1
 import numpy as np
 from collections import Counter
+import math
 
 # Review: There are 4^k possible kmers. There are L - k + 1 kmers in a string of length L.
 # So, the expected count of occurrences of a kmer appearing in 500x 1000bp sequences is:
@@ -33,6 +34,8 @@ def motif_enumeration(dna, k, d):
 # t x k motif matrix. From this matrix, find the most frequent nucleotide per column. The end goal is to find a means
 # to get the most conserved motif. First, we must define a score, which we want to minimize. This involves:
 
+# Representing the list of strings in DNA as an array, where [i, j] is nucleotide j of string i.
+# A scoring system, which acts column-wise by summing the amount of nucleotides that differ from the dominant nucleotide
 # A 4 x k count matrix, count(motifs), giving the column-wise occurrences of the nucleotides
 # A profile matrix, profile(motifs), which divides these counts by t, the number of rows in motifs
 # A consensus string, consensus(motifs), of the most popular motifs in each column of the motif matrix
@@ -81,8 +84,29 @@ def get_consensus_motifs(motifs):
     motif_array = get_motif_array(motifs)
     for i in range(motif_array.shape[1]):
         nucleotides = list(motif_array[:, i])
-        print(max(nucleotides, key=nucleotides.count))
+        consensus.append(max(nucleotides, key=nucleotides.count))
     return consensus
+
+
+# However, this consensus approach isn't satisfying: consider a column where there are 6 Cs, 2 As and 2 Ts, versus
+# a column with 6 Cs and 4 Ts. Both are contributing scores of 4, yet one is more conserved.
+# So switch to using entropy as a measure of uncertainty of the probability of each nucleotide's occurrence.
+# H(p1...pN) = -sum(pi * log2(pi))
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_entropy(prob_vec):
+    prob_vec = prob_vec[prob_vec != 0]  # remove 0s b/c of log2  - count these as 0 anyway
+    values = map(lambda x: x * math.log(x, 2), prob_vec)
+    return round(-sum(list(values)), 3)
+
+
+def get_motifs_entropy(motifs):
+    entropies = []
+    profile = profile_motifs(motifs)
+    for j in range(profile.shape[1]):
+        entropies.append(get_entropy(profile[:, j]))
+    return entropies
 
 
 
@@ -99,9 +123,5 @@ motifs = [
     "TCGGGTATAACC"
 ]
 
-# test = get_motif_array(motifs)
-# count = Counter(test[:, 0])
-# print(max(count.values()))
-print(count_motifs(motifs))
-print(profile_motifs(motifs))
-print(get_consensus_motifs(motifs))
+
+print(get_motifs_entropy(motifs))
