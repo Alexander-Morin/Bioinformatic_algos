@@ -92,6 +92,7 @@ def get_consensus_motifs(motifs):
 # a column with 6 Cs and 4 Ts. Both are contributing scores of 4, yet one is more conserved.
 # So switch to using entropy as a measure of uncertainty of the probability of each nucleotide's occurrence.
 # H(p1...pN) = -sum(pi * log2(pi))
+# In turn, these entropies are used to derive information content (1 - H(p1...pN) which is used in motif logos
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -102,12 +103,50 @@ def get_entropy(prob_vec):
 
 
 def get_motifs_entropy(motifs):
-    entropies = []
+    entropy = []
     profile = profile_motifs(motifs)
     for j in range(profile.shape[1]):
-        entropies.append(get_entropy(profile[:, j]))
-    return entropies
+        entropy.append(get_entropy(profile[:, j]))
+    return entropy
 
+
+# The text then introduces the Motif Finding Problem: Given a collection of strings, find a set of k-mers, one from each
+# string, that minimizes the score of the resulting motif.
+# A brute force solution would consider every kmer in the collection of of strings (each containing n nucleotides).
+# As there are n - k + 1 motifs per string, and a total of t strings, there are (n - k + 1)**t ways to form motifs.
+# For each choice of motifs the scoring function must get called, which requires k * t steps. Assuming k is smaller than
+# n, this approach would have O(n**t * k * t)
+
+# The text then states that rather than trying to derive motifs from each string, and then find consensus among this
+# collection of motifs, to instead explore all potential consensus kmers, and then find the best collection of motifs
+# for each consensus string. So consensus(motifs) -> motifs
+
+# This change of strategy requires finding a new scoring system. Originally, was considering column-wise to find the
+# difference from the consensus. Now consider row wise, where each string gets compared to a consensus string, and the
+# row score is the Hamming distance. The final score is the sum of these row scores.
+# ---------------------------------------------------------------------------------------------------------------------
+
+
+def pattern_distance(pattern, dna):
+    scores = []
+    for string in dna:
+        scores.append(ch1.get_hamming_distance(string, pattern))
+    return sum(scores)
+
+
+# The text then notes that this row-wise scoring (when compared against the consensus motif/pattern) yields the same
+# score as the column-wise approach (which is also comparing the difference from the most common nucleotide). This
+# "gives us an idea" - rather than searching for a collection of motifs minimizing the score, instead search for a
+# potential consensus string pattern that minimizes pattern_distance among all possible k-mers 'pattern' and all
+# possible choices of kmers in dna. This is equivalent to the motif finding problem.
+
+# Equivalent Motif Finding Problem: Given a collection of strings, find a collection of k-mers (one from each string)
+# that minimizes the distance between all possible patterns and all possible collections of k-mers.
+
+# The text notes that on the surface, this equivalent problem seems harder, as we must consider all motifs as well as
+# all kmer patterns. The 'key observation' is that if we are given pattern, we don't need to explore all possible
+# collections of motif in order to minimize d(pattern, motifs)
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 motifs = [
@@ -124,4 +163,4 @@ motifs = [
 ]
 
 
-print(get_motifs_entropy(motifs))
+print(pattern_distance("".join(get_consensus_motifs(motifs)), motifs))
