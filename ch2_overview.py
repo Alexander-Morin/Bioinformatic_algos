@@ -153,6 +153,9 @@ def pattern_distance(pattern, dna):
 # distances over all text/strings in dna.
 
 # The goal then becomes to find the 'median string' - the kmer pattern that minimizes d(pattern, dna) over all patterns.
+# Note that the following implementation must consider d(pattern, string) for every string in dna, requiring approx
+# k * n * t operations for t strings of length n in dna. Therefore O(4**k * n * k * t), which compares favorably
+# to the brute force motif search [O(n**t * k * t)] as k is usually under 20, while t is measures in the thousands.
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -180,19 +183,92 @@ def median_string(dna, k):
     return median
 
 
+# The text then introduces greedy algorithms, noting that they are typically heuristics that sacrifice speed for
+# accuracy, but often find good use in biological problems. Introduces the profile most probable kmer problem, where
+# given a string text, an integer k, and a 4xk profile matrix, the algorithm will produce the most probable kmer in
+# text.
+#
+# Can then use this as the basis of greedy motif search, which
+# ----------------------------------------------------------------------------------------------------------------------
 
-motifs = [
-    "TCGGGGGTTTTT",
-    "CCGGTGACTTAC",
-    "ACGGGGATTTTC",
-    "TTGGGGACTTTT",
-    "ATGGGGACTTCC",
-    "TCGGGGACTTCC",
-    "TCGGGGATTCAT",
-    "TAGGGGATTCCT",
-    "TAGGGGAACTAC",
-    "TCGGGTATAACC"
+
+def most_probable_kmer(text, k, profile):
+    kmer = ""
+    most_prob = 0
+    for i in range(len(text) - k+1):
+        pattern = list(text[i:i+k])
+        prob = 1
+        for j in range(len(pattern)):
+            if pattern[j] == "A":
+                prob *= profile[0, j]
+            elif pattern[j] == "C":
+                prob *= profile[1, j]
+            elif pattern[j] == "G":
+                prob *= profile[2, j]
+            elif pattern[j] == "T":
+                prob *= profile[3, j]
+        if prob > most_prob:
+            most_prob = prob
+            kmer = pattern
+    return kmer
+
+
+def greedy_motif_search(dna, k, t):
+    best_motifs = np.array([list(text[0:k]) for text in dna])
+    for i in range(len(dna[0]) - k+1):
+        motif1 = dna[0][0:k]
+        for j in range(2, t):
+
+    return best_motifs
+
+
+
+t = len(dna)
+k = 3
+best_motifs = np.array([list(text[0:k]) for text in dna])
+best_score = score_motifs(best_motifs)
+motif1 = list(dna[0][0:k])
+motifs = [motif1]
+for i in range(1, t):
+    profile = profile_motifs(motifs)
+    motif_i = most_probable_kmer(dna[i], k, profile)
+    if len(motif_i) == 0:
+        motif_i = list(dna[i][0:k])
+    motifs.append(motif_i)
+    if score_motifs(motifs) > best_score:
+        best_score = score_motifs(motifs)
+
+
+# motifs = [
+#     "TCGGGGGTTTTT",
+#     "CCGGTGACTTAC",
+#     "ACGGGGATTTTC",
+#     "TTGGGGACTTTT",
+#     "ATGGGGACTTCC",
+#     "TCGGGGACTTCC",
+#     "TCGGGGATTCAT",
+#     "TAGGGGATTCCT",
+#     "TAGGGGAACTAC",
+#     "TCGGGTATAACC"
+# ]
+
+
+# test_text = "ACCTGTTTATTGCCTAAGTTCCGAACAAACCCAATATAGCCCGAGGGCCT"
+# test_k = 5
+# test_profile = np.array([
+#     [0.2, 0.2, 0.3, 0.2, 0.3],
+#     [0.4, 0.3, 0.1, 0.5, 0.1],
+#     [0.3, 0.3, 0.5, 0.2, 0.4],
+#     [0.1, 0.2, 0.1, 0.1, 0.2]
+# ])
+
+
+dna = [
+    "GGCGTTCAGGCA",
+    "AAGAATCAGTCA",
+    "CAAGGAGTTCGC",
+    "CACGTCAATCAC",
+    "CAATAATATTCG"
 ]
 
 
-print(median_string(motifs, 5))
