@@ -10,7 +10,7 @@
 # GCTGAGCACCGG
 # AGTACGGGACAG
 
-# Output are the (k, d) motifs, separated by a space
+# Output is the median string
 # GAC
 
 # Usage: python3 median_string.py input.txt > output.txt
