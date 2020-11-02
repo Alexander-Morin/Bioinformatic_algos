@@ -146,7 +146,39 @@ def pattern_distance(pattern, dna):
 # The text notes that on the surface, this equivalent problem seems harder, as we must consider all motifs as well as
 # all kmer patterns. The 'key observation' is that if we are given pattern, we don't need to explore all possible
 # collections of motif in order to minimize d(pattern, motifs)
+
+# Define Motifs(Pattern, dna) as the set of motifs (one per string in dna) that minimizes the Hamming Distance between
+# pattern and all possible kmers in dna. d(pattern, text) refers to this minimum Hamming distance. Note that there can
+# be multiple kmers that minimize this distance, but this isn't an issue. d(pattern, dna) is therefore the sum of these
+# distances over all text/strings in dna.
+
+# The goal then becomes to find the 'median string' - the kmer pattern that minimizes d(pattern, dna) over all patterns.
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_pattern_distance_from_dna(pattern, dna):
+    k = len(pattern)
+    distance = 0
+    for string in dna:
+        hdist = math.inf
+        for i in range(len(string) - k + 1):
+            kmer = string[i:i+k]
+            if hdist > ch1.get_hamming_distance(pattern, kmer):
+                hdist = ch1.get_hamming_distance(pattern, kmer)
+        distance += hdist
+    return distance
+
+
+def median_string(dna, k):
+    distance = math.inf
+    for i in range(4**k):
+        pattern = ch1.number_to_pattern(i, k)
+        pattern_dist = get_pattern_distance_from_dna(pattern, dna)
+        if distance > pattern_dist:
+            distance = pattern_dist
+            median = pattern
+    return median
+
 
 
 motifs = [
@@ -163,4 +195,4 @@ motifs = [
 ]
 
 
-print(pattern_distance("".join(get_consensus_motifs(motifs)), motifs))
+print(median_string(motifs, 5))
