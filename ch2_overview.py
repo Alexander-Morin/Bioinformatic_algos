@@ -193,10 +193,10 @@ def median_string(dna, k):
 
 
 def most_probable_kmer(text, k, profile):
-    kmer = ""
+    kmer = text[0:k]
     most_prob = 0
     for i in range(len(text) - k+1):
-        pattern = list(text[i:i+k])
+        pattern = text[i:i+k]
         prob = 1
         for j in range(len(pattern)):
             if pattern[j] == "A":
@@ -214,29 +214,18 @@ def most_probable_kmer(text, k, profile):
 
 
 def greedy_motif_search(dna, k, t):
+    # http://www.mrgraeme.co.uk/greedy-motif-search/
     best_motifs = np.array([list(text[0:k]) for text in dna])
     for i in range(len(dna[0]) - k+1):
-        motif1 = dna[0][0:k]
-        for j in range(2, t):
-
+        motifs = [dna[0][i: i + k]]
+        for j in range(1, t):
+            profile = profile_motifs(motifs)
+            most_prob = most_probable_kmer(dna[j], k, profile)
+            motifs.append(most_prob)
+        if score_motifs(motifs) < score_motifs(best_motifs):
+                best_motifs = motifs
     return best_motifs
 
-
-
-t = len(dna)
-k = 3
-best_motifs = np.array([list(text[0:k]) for text in dna])
-best_score = score_motifs(best_motifs)
-motif1 = list(dna[0][0:k])
-motifs = [motif1]
-for i in range(1, t):
-    profile = profile_motifs(motifs)
-    motif_i = most_probable_kmer(dna[i], k, profile)
-    if len(motif_i) == 0:
-        motif_i = list(dna[i][0:k])
-    motifs.append(motif_i)
-    if score_motifs(motifs) > best_score:
-        best_score = score_motifs(motifs)
 
 
 # motifs = [
@@ -263,12 +252,11 @@ for i in range(1, t):
 # ])
 
 
-dna = [
-    "GGCGTTCAGGCA",
-    "AAGAATCAGTCA",
-    "CAAGGAGTTCGC",
-    "CACGTCAATCAC",
-    "CAATAATATTCG"
-]
 
-
+# dna = [
+#     "GGCGTTCAGGCA",
+#     "AAGAATCAGTCA",
+#     "CAAGGAGTTCGC",
+#     "CACGTCAATCAC",
+#     "CAATAATATTCG"
+# ]
