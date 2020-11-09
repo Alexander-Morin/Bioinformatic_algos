@@ -13,7 +13,7 @@
 # Output is the median string
 # GAC
 
-# Usage: python3 median_string.py input.txt > output.txt
+# Usage: python3 2B_median_string.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
 import sys
