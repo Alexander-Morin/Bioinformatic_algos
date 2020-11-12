@@ -4,6 +4,7 @@ import ch1_overview as ch1
 import numpy as np
 from collections import Counter
 import math
+import random
 
 # Review: There are 4^k possible kmers. There are L - k + 1 kmers in a string of length L.
 # So, the expected count of occurrences of a kmer appearing in 500x 1000bp sequences is:
@@ -59,7 +60,7 @@ def score_motifs(motifs):
     return sum(scores)
 
 
-def count_motifs(motifs):
+def count_motifs(motifs, pseudocounts=False):
     motif_array = get_motif_array(motifs)
     a = []
     c = []
@@ -71,11 +72,16 @@ def count_motifs(motifs):
         c.append(nucleotides.count("C"))
         g.append(nucleotides.count("G"))
         t.append(nucleotides.count("T"))
-    return np.array([a, c, g, t])
+    counts = np.array([a, c, g, t])
+    if pseudocounts is True:
+        counts += 1
+    return counts
 
 
-def profile_motifs(motifs):
+def profile_motifs(motifs, pseudocounts=False):
     counts = count_motifs(motifs)
+    if pseudocounts is True:
+        counts += 1
     return counts / len(motifs)
 
 
@@ -186,9 +192,10 @@ def median_string(dna, k):
 # The text then introduces greedy algorithms, noting that they are typically heuristics that sacrifice speed for
 # accuracy, but often find good use in biological problems. Introduces the profile most probable kmer problem, where
 # given a string text, an integer k, and a 4xk profile matrix, the algorithm will produce the most probable kmer in
-# text.
-#
-# Can then use this as the basis of greedy motif search, which
+# text. Can then use this as the basis of greedy motif search, which looks to find the most probably kmer iteratively,
+# reconstructing the profile matrix each time after finding the most prob kmer and adding it to the set of motifs.
+# Because some columns may have probability = 0 for a nucleotide, resulting in 0 for the entire motif after multiplying,
+# use pseudocounts (Laplace's rule of succession) for correction.
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -213,19 +220,61 @@ def most_probable_kmer(text, k, profile):
     return kmer
 
 
-def greedy_motif_search(dna, k, t):
+def greedy_motif_search(dna, k, t, pseudocounts=False):
     # http://www.mrgraeme.co.uk/greedy-motif-search/
     best_motifs = np.array([list(text[0:k]) for text in dna])
     for i in range(len(dna[0]) - k+1):
         motifs = [dna[0][i: i + k]]
         for j in range(1, t):
-            profile = profile_motifs(motifs)
+            profile = profile_motifs(motifs, pseudocounts)
             most_prob = most_probable_kmer(dna[j], k, profile)
             motifs.append(most_prob)
         if score_motifs(motifs) < score_motifs(best_motifs):
                 best_motifs = motifs
     return best_motifs
 
+
+# The book then discusses randomized algorithms: Las Vegas algorithms give an exact answer, while Monte Carlo algos may
+# not give an exact answer, but they are quick and can be repeated many times to point to a consensus answer. Introduces
+# the randomized motif search, where kmers are randomly chosen to construct a profile, which is used to select the most
+# probable kmer. Define a separate function to call this process 1000 times, tracking the best overall score and motif
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def random_kmer(string, k):
+    start = random.randint(0, len(string) - k)
+    return string[start:start+k]
+
+
+def random_motifs(dna, k):
+    return [random_kmer(string, k) for string in dna]
+
+
+def randomized_motif_search(dna, k, t):
+    motifs = random_motifs(dna, k)
+    best_motifs = motifs
+    best_score = score_motifs(best_motifs)
+    while True:
+        profile = profile_motifs(motifs, pseudocounts=True)
+        motifs = [most_probable_kmer(string, k, profile) for string in dna]
+        score = score_motifs(motifs)
+        if score < best_score:
+            best_motifs = motifs
+            best_score = score
+        else:
+            return best_motifs, best_score
+
+
+def repeated_randomized_motif_search(dna, k, t, r):
+    motifs = random_motifs(dna, k)
+    best_motifs = motifs
+    best_score = score_motifs(best_motifs)
+    for i in range(0, r):
+        motifs, score = randomized_motif_search(dna, k, t)
+        if score < best_score:
+            best_score = score
+            best_motifs = motifs
+    return best_motifs
 
 
 # motifs = [
@@ -260,3 +309,5 @@ def greedy_motif_search(dna, k, t):
 #     "CACGTCAATCAC",
 #     "CAATAATATTCG"
 # ]
+
+
