@@ -277,6 +277,18 @@ def repeated_randomized_motif_search(dna, k, t, r):
     return best_motifs
 
 
+# The text notes that this randomized motif search works because the implanted motif ultimately biases the generated
+# profile matrix. However, it is 'reckless' as it regenerates the set of motifs at each step, potentially throwing away
+# a true motif. It then introduces the Gibbs sampler, which uses a weighted random function to only throw away one of
+# the motifs (note that this is random, while the randomized motif search is deterministic as it selects the profile
+# most probable kmers.
+
+
+def weighted_random_integer(probs):
+    weighted_probs = [i / sum(probs) for i in probs]
+    return random.choices(range(0, len(probs)), weighted_probs)
+
+
 # motifs = [
 #     "TCGGGGGTTTTT",
 #     "CCGGTGACTTAC",
@@ -309,5 +321,3 @@ def repeated_randomized_motif_search(dna, k, t, r):
 #     "CACGTCAATCAC",
 #     "CAATAATATTCG"
 # ]
-
-
