@@ -60,7 +60,7 @@ def score_motifs(motifs):
     return sum(scores)
 
 
-def count_motifs(motifs, pseudocounts=False):
+def count_motifs(motifs):
     motif_array = get_motif_array(motifs)
     a = []
     c = []
@@ -72,17 +72,24 @@ def count_motifs(motifs, pseudocounts=False):
         c.append(nucleotides.count("C"))
         g.append(nucleotides.count("G"))
         t.append(nucleotides.count("T"))
-    counts = np.array([a, c, g, t])
-    if pseudocounts is True:
-        counts += 1
-    return counts
+    return np.array([a, c, g, t])
 
 
-def profile_motifs(motifs, pseudocounts=False):
-    counts = count_motifs(motifs)
-    if pseudocounts is True:
-        counts += 1
-    return counts / len(motifs)
+def profile_motifs(motifs):
+    motif_array = get_motif_array(motifs)
+    a = []
+    c = []
+    g = []
+    t = []
+    for column in range(motif_array.shape[1]):
+        nucleotides = list(motif_array[:, column])
+        a.append(nucleotides.count("A")+1)  # add pseudocounts to stop multiplying probs by 0
+        c.append(nucleotides.count("C")+1)
+        g.append(nucleotides.count("G")+1)
+        t.append(nucleotides.count("T")+1)
+    counts_matrix = np.array([a, c, g, t])
+    profile_matrix = counts_matrix / sum(counts_matrix[:, 0])
+    return profile_matrix
 
 
 def get_consensus_motifs(motifs):
@@ -199,34 +206,35 @@ def median_string(dna, k):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def index_to_base(i):
+    return "ACGT"[i]
+
+
+def base_to_index(b):
+    return "ACGT".index(b)
+
+
 def most_probable_kmer(text, k, profile):
     kmer = text[0:k]
-    most_prob = 0
+    most_prob = 0.0
     for i in range(len(text) - k+1):
         pattern = text[i:i+k]
-        prob = 1
+        prob = 1.0
         for j in range(len(pattern)):
-            if pattern[j] == "A":
-                prob *= profile[0, j]
-            elif pattern[j] == "C":
-                prob *= profile[1, j]
-            elif pattern[j] == "G":
-                prob *= profile[2, j]
-            elif pattern[j] == "T":
-                prob *= profile[3, j]
+            prob *= profile[base_to_index(pattern[j]), j]
         if prob > most_prob:
             most_prob = prob
             kmer = pattern
     return kmer
 
 
-def greedy_motif_search(dna, k, t, pseudocounts=False):
+def greedy_motif_search(dna, k, t):
     # http://www.mrgraeme.co.uk/greedy-motif-search/
     best_motifs = np.array([list(text[0:k]) for text in dna])
     for i in range(len(dna[0]) - k+1):
         motifs = [dna[0][i: i + k]]
         for j in range(1, t):
-            profile = profile_motifs(motifs, pseudocounts)
+            profile = profile_motifs(motifs)
             most_prob = most_probable_kmer(dna[j], k, profile)
             motifs.append(most_prob)
         if score_motifs(motifs) < score_motifs(best_motifs):
@@ -255,7 +263,7 @@ def randomized_motif_search(dna, k, t):
     best_motifs = motifs
     best_score = score_motifs(best_motifs)
     while True:
-        profile = profile_motifs(motifs, pseudocounts=True)
+        profile = profile_motifs(motifs)
         motifs = [most_probable_kmer(string, k, profile) for string in dna]
         score = score_motifs(motifs)
         if score < best_score:
@@ -280,44 +288,67 @@ def repeated_randomized_motif_search(dna, k, t, r):
 # The text notes that this randomized motif search works because the implanted motif ultimately biases the generated
 # profile matrix. However, it is 'reckless' as it regenerates the set of motifs at each step, potentially throwing away
 # a true motif. It then introduces the Gibbs sampler, which uses a weighted random function to only throw away one of
-# the motifs (note that this is random, while the randomized motif search is deterministic as it selects the profile
-# most probable kmers.
+# the motifs (note that this is random, while the randomized motif search is deterministic after the initial motif
+# selection as it selects the profile most probable kmers.
+
+# The weighted random function accepts probabilities that are not constrained by having to sum to 1. It sums the probs
+# and weighs each prob by this sum.
+
+# Gibbs sampler also starts by initializing random motifs and finding the score. It then goes through an iterative
+# process of (normal) randomly removing one of the strings in dna, as well as the corresponding motif. A profile is then
+# made from this subset, and the probabilities from this profile are used in the (weighted) random function to sample a
+# motif from the held out dna string. This sampled motif is added back to the collection of motifs, and their score
+# compared to the best score. This process must be repeated to avoid getting trapped in local optimums.
 
 
 def weighted_random_integer(probs):
     weighted_probs = [i / sum(probs) for i in probs]
-    return random.choices(range(0, len(probs)), weighted_probs)
+    return random.choices(range(0, len(probs)), weighted_probs)[0]
 
 
-# motifs = [
-#     "TCGGGGGTTTTT",
-#     "CCGGTGACTTAC",
-#     "ACGGGGATTTTC",
-#     "TTGGGGACTTTT",
-#     "ATGGGGACTTCC",
-#     "TCGGGGACTTCC",
-#     "TCGGGGATTCAT",
-#     "TAGGGGATTCCT",
-#     "TAGGGGAACTAC",
-#     "TCGGGTATAACC"
-# ]
+def profile_kmer_probs(text, k, profile):
+    kmer_probs = dict()
+    for i in range(len(text) - k+1):
+        pattern = text[i:i+k]
+        prob = 1.0
+        for j in range(len(pattern)):
+            prob *= profile[base_to_index(pattern[j]), j]
+        kmer_probs[pattern] = prob
+    return kmer_probs
 
 
-# test_text = "ACCTGTTTATTGCCTAAGTTCCGAACAAACCCAATATAGCCCGAGGGCCT"
-# test_k = 5
-# test_profile = np.array([
-#     [0.2, 0.2, 0.3, 0.2, 0.3],
-#     [0.4, 0.3, 0.1, 0.5, 0.1],
-#     [0.3, 0.3, 0.5, 0.2, 0.4],
-#     [0.1, 0.2, 0.1, 0.1, 0.2]
-# ])
+def profile_random_kmer(text, k, profile):
+    kmer_probs = profile_kmer_probs(text, k, profile)
+    i = weighted_random_integer(kmer_probs.values())
+    return list(kmer_probs.keys())[i]
 
 
+def gibbs_sampler(dna, k, t, n=100):
+    motifs = random_motifs(dna, k)
+    best_motifs = motifs
+    best_score = score_motifs(best_motifs)
+    for j in range(n):
+        test_motifs = best_motifs.copy()
+        i = random.randint(0, t-1)
+        dna_i = dna[i]
+        del test_motifs[i]
+        profile = profile_motifs(test_motifs)
+        random_motif = profile_random_kmer(dna_i, k, profile)
+        test_motifs.insert(i, random_motif)
+        score = score_motifs(test_motifs)
+        if score < best_score:
+            best_motifs = test_motifs
+            best_score = score
+    return best_motifs, best_score
 
-# dna = [
-#     "GGCGTTCAGGCA",
-#     "AAGAATCAGTCA",
-#     "CAAGGAGTTCGC",
-#     "CACGTCAATCAC",
-#     "CAATAATATTCG"
-# ]
+
+def repeated_gibbs_sampler(dna, k, t, n=100, r=20):
+    motifs = random_motifs(dna, k)
+    best_motifs = motifs
+    best_score = score_motifs(best_motifs)
+    for i in range(0, r):
+        motifs, score = gibbs_sampler(dna, k, t, n)
+        if score < best_score:
+            best_score = score
+            best_motifs = motifs
+    return best_motifs
