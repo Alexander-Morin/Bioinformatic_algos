@@ -10,7 +10,7 @@
 # TAGATCAAGTTTCAGGTGCACGTCGGTGAACC
 # AATCCACCAGCTCCACGTGCAATGTTGGCCTA
 
-# Output is the median string
+# Output
 # TCTCGGGG
 # CCAAGGTG
 # TACAGGCG
@@ -71,8 +71,18 @@ def profile_motifs(motifs):
         g.append(nucleotides.count("G")+1)
         t.append(nucleotides.count("T")+1)
     counts_matrix = np.array([a, c, g, t])
-    profile_matrix = counts_matrix / len(motifs)
+    profile_matrix = counts_matrix / sum(counts_matrix[:, 0])
     return profile_matrix
+
+
+def index_to_base(i):
+    """ given an index (assumed 0-3), give the corresponding nucleotide in the order of A/C/G/T"""
+    return "ACGT"[i]
+
+
+def base_to_index(b):
+    """ given an A/C/G/T nucleotide, return the corresponding index 0-3"""
+    return "ACGT".index(b)
 
 
 def most_probable_kmer(text, k, profile):
@@ -83,22 +93,15 @@ def most_probable_kmer(text, k, profile):
     returns the most probable kmer in text, given the probabilities contained in profile
     """
     kmer = text[0:k]
-    best_prob = 0
+    most_prob = 0.0
     for i in range(len(text) - k+1):
         pattern = text[i:i+k]
-        prob = 1
+        prob = 1.0
         for j in range(len(pattern)):
-            if pattern[j] == "A":
-                prob *= profile[0, j]
-            elif pattern[j] == "C":
-                prob *= profile[1, j]
-            elif pattern[j] == "G":
-                prob *= profile[2, j]
-            elif pattern[j] == "T":
-                prob *= profile[3, j]
-        if prob > best_prob:
+            prob *= profile[base_to_index(pattern[j]), j]
+        if prob > most_prob:
+            most_prob = prob
             kmer = pattern
-            best_prob = prob
     return kmer
 
 
@@ -175,10 +178,9 @@ def main():
     for line in fileinput.input(argv[1]):
         if len(line) > 0:
             if input_param is None:
-                if input_param is None:
-                    input_param = line.replace('\n', '').split()
-                    input_k = int(input_param[0])
-                    input_t = int(input_param[1])
+                input_param = line.replace('\n', '').split()
+                input_k = int(input_param[0])
+                input_t = int(input_param[1])
             else:
                 input_text.append(line.replace('\n', ''))
 
