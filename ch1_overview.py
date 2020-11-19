@@ -79,44 +79,30 @@ def get_freq_kmer(text, k):
 # the quotient will be equal to pattern to number (prefix).
 
 
-def symbol_to_number(symbol):
-    assert symbol in ["A", "C", "G", "T"], "Invalid nucleotide"
-    if symbol == "A":
-        return 0
-    elif symbol == "C":
-        return 1
-    elif symbol == "G":
-        return 2
-    elif symbol == "T":
-        return 3
+def base_to_index(b):
+    assert b in ["A", "C", "G", "T"], "Invalid base"
+    return "ACGT".index(b)
+
+
+def index_to_base(i):
+    assert i in [0, 1, 2, 3], "Invalid index"
+    return "ACGT"[i]
 
 
 def pattern_to_number(pattern):
     if len(pattern) == 1:
-        return symbol_to_number(pattern)
+        return base_to_index(pattern)
     symbol = pattern[-1]
     prefix = pattern[:-1]
-    return 4 * pattern_to_number(prefix) + symbol_to_number(symbol)
-
-
-def number_to_symbol(number):
-    assert number in [0, 1, 2, 3], "Invalid index"
-    if number == 0:
-        return "A"
-    elif number == 1:
-        return "C"
-    elif number == 2:
-        return "G"
-    elif number == 3:
-        return "T"
+    return 4 * pattern_to_number(prefix) + base_to_index(symbol)
 
 
 def number_to_pattern(index, k):
     if k == 1:
-        return number_to_symbol(index)
+        return index_to_base(index)
     prefix_index = index // 4
     remainder = index % 4
-    symbol = number_to_symbol(remainder)
+    symbol = index_to_base(remainder)
     prefix_pattern = number_to_pattern(prefix_index, k-1)
     return prefix_pattern + symbol
 
