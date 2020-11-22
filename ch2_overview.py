@@ -206,14 +206,6 @@ def median_string(dna, k):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def index_to_base(i):
-    return "ACGT"[i]
-
-
-def base_to_index(b):
-    return "ACGT".index(b)
-
-
 def most_probable_kmer(text, k, profile):
     kmer = text[0:k]
     most_prob = 0.0
@@ -221,7 +213,7 @@ def most_probable_kmer(text, k, profile):
         pattern = text[i:i+k]
         prob = 1.0
         for j in range(len(pattern)):
-            prob *= profile[base_to_index(pattern[j]), j]
+            prob *= profile[ch1.base_to_index(pattern[j]), j]
         if prob > most_prob:
             most_prob = prob
             kmer = pattern
@@ -312,7 +304,7 @@ def profile_kmer_probs(text, k, profile):
         pattern = text[i:i+k]
         prob = 1.0
         for j in range(len(pattern)):
-            prob *= profile[base_to_index(pattern[j]), j]
+            prob *= profile[ch1.base_to_index(pattern[j]), j]
         kmer_probs[pattern] = prob
     return kmer_probs
 
