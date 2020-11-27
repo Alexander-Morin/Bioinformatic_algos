@@ -18,9 +18,8 @@ def string_composition(text, k):
 
 def spell_string_by_path(text):
     string = [text[0]]
-    for pattern in text[1:-1]:
+    for pattern in text[1:]:
         string.append(pattern[-1])
-    string.append(text[-1][-1])
     return "".join(string)
 
 
