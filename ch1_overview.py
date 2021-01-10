@@ -397,13 +397,13 @@ def freq_kmers_mismatch_sort(text, k, d):
 
     index_array[::-1].sort()  # decreasing sort
 
-    for i in range(len(neighbourhood)-1):
-        if index_array[i] == index_array[i+1]:
-            count_array[i+1] = count_array[i] + 1
+    for i in range(1, len(neighbourhood)):
+        if index_array[i] == index_array[i-1]:
+            count_array[i] += count_array[i-1]
 
     max_count = max(count_array)
 
-    for i in range(len(neighbourhood)-1):
+    for i in range(len(neighbourhood)):
         if count_array[i] == max_count:
             freq_patterns.append(number_to_pattern(index_array[i], k))
 
@@ -414,7 +414,7 @@ def freq_kmers_mismatch_sort(text, k, d):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def freq_kmers_mismatch_sort_rev(text, k, d):
+def freq_kmers_mismatch_rev(text, k, d):
     freq_patterns = []
     neighbourhood = {}
 
