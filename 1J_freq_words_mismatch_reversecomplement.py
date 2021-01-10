@@ -70,7 +70,7 @@ def neighbours(pattern, d):
     return neighbourhood
 
 
-def freq_kmers_mismatch_sort_rev(text, k, d):
+def freq_kmers_mismatch_rev(text, k, d):
     """
     text as a string containing at least one of [A,C,G,T]
     k as an int >= 2
@@ -121,7 +121,7 @@ def main():
                 input_k = int(input_param[0])
                 input_d = int(input_param[1])
 
-    output = freq_kmers_mismatch_sort_rev(input_text, input_k, input_d)
+    output = freq_kmers_mismatch_rev(input_text, input_k, input_d)
 
     print(output)
 
