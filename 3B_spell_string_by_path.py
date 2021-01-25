@@ -1,4 +1,5 @@
-# Implementing code to XXX
+# Implementing code to spell a string by a genomic path: output a string (text) of length k+n-1 such that that ith kmer
+# in text is equal to pattern(i) (for 1 <= i <= n)
 # Problem 3B in the BALA textbook/Rosalind
 
 # Input is a text file with each line as a pattern in text
@@ -8,7 +9,7 @@
 # GAAGC
 # AAGCT
 
-# Output is the median string
+# Output is the string, text
 # ACCGAAGCT
 
 # Usage: python3 3B_spell_string_by_path.py input.txt > output.txt
