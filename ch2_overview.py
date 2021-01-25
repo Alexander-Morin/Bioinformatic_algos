@@ -97,7 +97,8 @@ def get_consensus_motifs(motifs):
     motif_array = get_motif_array(motifs)
     for i in range(motif_array.shape[1]):
         nucleotides = list(motif_array[:, i])
-        consensus.append(max(nucleotides, key=nucleotides.count))
+        consensus.append(max(nucleotides, key=nucleotides.count))  # faster for small lists
+        # consensus.append(Counter(nucleotides).most_common(1))  # faster for larger lists
     return consensus
 
 
