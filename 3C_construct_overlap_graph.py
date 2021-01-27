@@ -22,6 +22,10 @@ import fileinput
 
 
 def get_adjacency_dict(patterns):
+    """
+    patterns: list of DNA strings
+    returns an adjacency dictionary corresponding to the overlap graph
+    """
     adjacency_dict = dict.fromkeys(patterns)
     for node1 in adjacency_dict:
         suffix = node1[1:]

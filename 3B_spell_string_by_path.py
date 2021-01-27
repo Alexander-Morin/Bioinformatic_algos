@@ -20,6 +20,10 @@ import fileinput
 
 
 def spell_string_by_path(text):
+    """
+    text: list of DNA strings assumed to be overlapping by len(string)-1
+    returns the complete glued string
+    """
     string = [text[0]]
     for pattern in text[1:]:
         string.append(pattern[-1])
