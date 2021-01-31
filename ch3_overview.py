@@ -29,6 +29,7 @@ def spell_string_by_path(text):
 # another, resulting in a directed overlap graph where the kmer nodes are sorted lexicographically. Spelling out the
 # string means visiting each node exactly once. Introduces the overlap graph problem, with (k-1) overlap and returning
 # an adjacency list (which is actually better represented as a mapping => dict)
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_adjacency_dict(patterns):
@@ -42,6 +43,29 @@ def get_adjacency_dict(patterns):
     return adjacency_dict
 
 
+# To solve the string reconstruction problem, looking for a Hamiltonian path: a path in the graph that visits every
+# node. Note that there may be more than one Hamiltonian path in a graph. States that an alternative way to find
+# Hamiltonian paths in large graphs is to follow de Bruijn's approach: represent a kmer composition as a graph by
+# treating the kmers as edges, rather than nodes. Pairs of consecutive edges represent kmers that overlap in (k-1)
+# nucleotides, so the node with the incoming and outgoing edges are labeled as the (k-1)mers. This results in the
+# merging of identical nodes into one - decreases count of nodes while preserving the count of edges. For example, if
+# text has 3 repeats of ATG, there would be 3 edges connecting node AT to node TG
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def de_graph(text, k):
+    adjacency_dict = dict()
+    for i in range(len(text) - k+1):
+        kmer = text[i:i+k-1]
+        next_kmer = text[i+1:i+k]
+        if kmer not in adjacency_dict:
+            adjacency_dict[kmer] = [next_kmer]
+        else:
+            adjacency_dict[kmer].append(next_kmer)
+    return adjacency_dict
+
+
+
 
 patterns = [
     "ATGCG",
@@ -50,4 +74,7 @@ patterns = [
     "AGGCA",
     "GGCAT"
     ]
+
+
+
 
