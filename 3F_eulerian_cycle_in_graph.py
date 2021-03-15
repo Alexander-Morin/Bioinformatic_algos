@@ -5,7 +5,7 @@
 # https://www.geeksforgeeks.org/hierholzers-algorithm-directed-graph/
 # https://www.youtube.com/watch?v=8MpoO2zA2l4
 
-# Problem 3E in the BALA textbook/Rosalind
+# Problem 3F in the BALA textbook/Rosalind
 
 # Input is a text file where each line corresponds to the nodes/edges of the graph
 # 0 -> 3
@@ -22,7 +22,7 @@
 # Output is a string containing the Euler path
 # 6->8->7->9->6->5->4->2->1->0->3->2->6
 
-# Usage: python3 3E_eulerian_cycle_in_graph.py input.txt > output.txt
+# Usage: python3 3F_eulerian_cycle_in_graph.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
 import sys
