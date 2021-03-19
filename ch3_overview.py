@@ -2,6 +2,7 @@
 
 from random import choice
 # import numpy as np
+import pandas as pd
 from collections import defaultdict
 
 # First, focus on the more simplistic case where are all reads are kmers of length k, all reads come from the same
@@ -101,16 +102,15 @@ def de_graph_from_pattern(patterns):
 
 
 def parse_graph(list_input):
-    adjacency_dict = dict()
+    graph = defaultdict(list)
     for line in list_input:
-        split_input = line.split("->")
+        split_input = line.split(" -> ")
         in_node = split_input[0].strip()
         out_nodes = split_input[1].split(",")
-        if in_node not in adjacency_dict:
-            adjacency_dict[in_node] = []
         for node in out_nodes:
-            adjacency_dict[in_node].append(node.strip())
-    return adjacency_dict
+            graph[in_node].append(node)
+            graph[node]  # initialize a node in case it only has edges coming in
+    return graph
 
 
 def eulerian_cycle(graph):
@@ -127,21 +127,61 @@ def eulerian_cycle(graph):
     print(cycle)
 
 
+# If the graph is not balanced, you may still be able find a Eulerian path - every edge is visited once, but the start
+# and end nodes will be different. Eulerian path requires that at most one node has out degree - in degree == 1 (start),
+# and at most one node has in degree - out degree == 1 (end), with all other nodes being balanced.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def count_edges(graph):
+    nodes = set()
+    for node in graph:
+        nodes.update(node)
+        for target in graph[node]:
+            nodes.update(target)
+    edge_df = pd.DataFrame(
+        {"Edges_in": [0] * len(nodes),
+         "Edges_out": [0] * len(nodes)},
+        index=nodes)
+    for node in graph:
+        edge_df.at[node, 'Edges_out'] = len(graph[node])
+        for target in graph[node]:
+            if target in nodes:
+                edge_df.at[target, 'Edges_in'] += 1
+    return edge_df
+
+
+# def eulerian_path(graph):
+#     count_df = count_edges(graph)
+#     start, end = None, None
+#     path = []
+#     for node in count_df.index:
+#         if count_df.at[node, "Edges_out"] - count_df.at[node, "Edges_in"] == 1:
+#             start = node
+#         elif count_df.at[node, "Edges_in"] - count_df.at[node, "Edges_out"] == 1:
+#             end = node
+
+
+# graph_input = [
+#     "0 -> 3",
+#     "1 -> 0",
+#     "2 -> 1,6",
+#     "3 -> 2",
+#     "4 -> 2",
+#     "5 -> 4",
+#     "6 -> 5,8",
+#     "7 -> 9",
+#     "8 -> 7",
+#     "9 -> 6"
+# ]
 
 graph_input = [
-    "0 -> 3",
-    "1 -> 0",
-    "2 -> 1,6",
-    "3 -> 2",
-    "4 -> 2",
-    "5 -> 4",
-    "6 -> 5,8",
-    "7 -> 9",
-    "8 -> 7",
+    "0 -> 2",
+    "1 -> 3",
+    "2 -> 1",
+    "3 -> 0,4",
+    "6 -> 3,7",
+    "7 -> 8",
+    "8 -> 9",
     "9 -> 6"
 ]
-
-
-
-graph = parse_graph(graph_input)
-eulerian_cycle(graph)

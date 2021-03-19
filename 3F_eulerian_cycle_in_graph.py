@@ -28,24 +28,23 @@
 import sys
 import fileinput
 from random import choice
+from collections import defaultdict
 
 
 def parse_graph(list_input):
     """
-    list_input: list containing nodes/edges of form '2 -> 1,6'
-    return an adjacency list/dictionary
-    """
-
-    adjacency_dict = dict()
+     list_input: list containing nodes/edges of form '2 -> 1,6'
+     return an adjacency list/dictionary
+     """
+    graph = defaultdict(list)
     for line in list_input:
-        split_input = line.split("->")
+        split_input = line.split(" -> ")
         in_node = split_input[0].strip()
         out_nodes = split_input[1].split(",")
-        if in_node not in adjacency_dict:
-            adjacency_dict[in_node] = []
         for node in out_nodes:
-            adjacency_dict[in_node].append(node.strip())
-    return adjacency_dict
+            graph[in_node].append(node)
+            graph[node]  # initialize a node in case it only has edges coming in
+    return graph
 
 
 def eulerian_cycle(graph):
