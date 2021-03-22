@@ -114,7 +114,7 @@ def parse_graph(list_input):
 
 
 def eulerian_cycle(graph):
-    current_path = list(choice(list(graph.keys())))  # initialize a stack with a random node
+    current_path = [choice(list(graph.keys()))]  # initialize a stack with a random node
     cycle = []  # list to store final cycle
     while current_path:
         current_node = current_path[-1]
@@ -134,11 +134,7 @@ def eulerian_cycle(graph):
 
 
 def count_edges(graph):
-    nodes = set()
-    for node in graph:
-        nodes.update(node)
-        for target in graph[node]:
-            nodes.update(target)
+    nodes = set(graph)
     edge_df = pd.DataFrame(
         {"Edges_in": [0] * len(nodes),
          "Edges_out": [0] * len(nodes)},
@@ -146,20 +142,34 @@ def count_edges(graph):
     for node in graph:
         edge_df.at[node, 'Edges_out'] = len(graph[node])
         for target in graph[node]:
-            if target in nodes:
-                edge_df.at[target, 'Edges_in'] += 1
+            edge_df.at[target, 'Edges_in'] += 1
     return edge_df
 
 
-# def eulerian_path(graph):
-#     count_df = count_edges(graph)
-#     start, end = None, None
-#     path = []
-#     for node in count_df.index:
-#         if count_df.at[node, "Edges_out"] - count_df.at[node, "Edges_in"] == 1:
-#             start = node
-#         elif count_df.at[node, "Edges_in"] - count_df.at[node, "Edges_out"] == 1:
-#             end = node
+def get_start_node(graph):
+    count_df = count_edges(graph)
+    start = None
+    for node in count_df.index:
+        if count_df.at[node, "Edges_out"] - count_df.at[node, "Edges_in"] == 1:
+            start = node
+    if start is None:
+        raise ValueError("No start node was found")
+    return start
+
+
+def eulerian_path(graph):
+    current_path = [get_start_node(graph)]  # initialize a stack with the starting node
+    path = []  # list to store final path
+    while current_path:
+        current_node = current_path[-1]
+        if graph[current_node]:
+            next_node = graph[current_node].pop()  # Find and remove next node adjacent to current node
+            current_path.append(next_node)  # Push the new node to the stack
+        else:  # back-track to find remaining cycle
+            path.append(current_path.pop())  # Remove the current node and put it in the cycle
+
+    path = "->".join(path[::-1])  # print in reverse
+    print(path)
 
 
 # graph_input = [
@@ -175,13 +185,17 @@ def count_edges(graph):
 #     "9 -> 6"
 # ]
 
-graph_input = [
-    "0 -> 2",
-    "1 -> 3",
-    "2 -> 1",
-    "3 -> 0,4",
-    "6 -> 3,7",
-    "7 -> 8",
-    "8 -> 9",
-    "9 -> 6"
-]
+# graph_input = [
+#     "0 -> 2",
+#     "1 -> 3",
+#     "2 -> 1",
+#     "3 -> 0,4",
+#     "6 -> 3,7",
+#     "7 -> 8",
+#     "8 -> 9",
+#     "9 -> 6"
+# ]
+
+
+eulerian_path(parse_graph(graph_input))
+
