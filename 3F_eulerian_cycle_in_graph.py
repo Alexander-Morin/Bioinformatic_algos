@@ -54,7 +54,7 @@ def eulerian_cycle(graph):
     assumes: graph is strongly connected and balanced
     """
 
-    current_path = list(choice(list(graph.keys())))  # initialize a stack with a random node
+    current_path = [choice(list(graph.keys()))]  # initialize a stack with a random node
     cycle = []  # list to store final cycle
 
     while current_path:
