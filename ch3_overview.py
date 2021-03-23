@@ -69,7 +69,7 @@ def de_graph_from_string(text, k):
 
 # Solving the string reconstruction problem reduces to finding a path that visits every edge of the De Bruijn graph
 # exactly once == Eulerian path. The text then talks about the composition graph of text, which has all of the kmers
-# as isolated edges. Gluing nodes wit the same label in the composition graph produces DeBruijn(text). The text then
+# as isolated edges. Gluing nodes with the same label in the composition graph produces DeBruijn(text). The text then
 # suggests a way of constructing the De Bruijn graph that does involve gluing: given a collection of kmer patterns, the
 # nodes of DeBruijn(patterns) are all unique (k-1)mers occurring as a prefix or suffix. DeBruijn(patterns) forms a
 # directed graph by connecting prefix to suffix. However, I am not certain how this is different from constructing
@@ -124,7 +124,7 @@ def eulerian_cycle(graph):
         else:  # back-track to find remaining cycle
             cycle.append(current_path.pop())  # Remove the current node and put it in the cycle
     cycle = "->".join(cycle[::-1])  # print in reverse
-    print(cycle)
+    return cycle
 
 
 # If the graph is not balanced, you may still be able find a Eulerian path - every edge is visited once, but the start
@@ -169,33 +169,49 @@ def eulerian_path(graph):
             path.append(current_path.pop())  # Remove the current node and put it in the cycle
 
     path = "->".join(path[::-1])  # print in reverse
-    print(path)
+    return path
 
 
-# graph_input = [
-#     "0 -> 3",
-#     "1 -> 0",
-#     "2 -> 1,6",
-#     "3 -> 2",
-#     "4 -> 2",
-#     "5 -> 4",
-#     "6 -> 5,8",
-#     "7 -> 9",
-#     "8 -> 7",
-#     "9 -> 6"
-# ]
-
-# graph_input = [
-#     "0 -> 2",
-#     "1 -> 3",
-#     "2 -> 1",
-#     "3 -> 0,4",
-#     "6 -> 3,7",
-#     "7 -> 8",
-#     "8 -> 9",
-#     "9 -> 6"
-# ]
+# The text then states we now have a method to assemble a genome, as the string reconstruction problem reduces to
+# finding a Eulerian path in the De Bruijn graph generated from reads
+# TODO: need to fix both implementation and conceptual identify of graph/adj dict (overlap vs DBG)
+# ----------------------------------------------------------------------------------------------------------------------
 
 
-eulerian_path(parse_graph(graph_input))
+def de_graph_from_pattern(patterns):
+    adjacency_dict = defaultdict(list)
+    for kmer in patterns:
+        prefix = kmer[:-1]
+        suffix = kmer[1:]
+        adjacency_dict[prefix].append(suffix)
+        adjacency_dict[suffix]  # init suffix in case it has no outgoing edges
+    return adjacency_dict
 
+
+def spell_string_by_path(text):
+    string = [text[0]]
+    for pattern in text[1:]:
+        string.append(pattern[-1])
+    return "".join(string)
+
+
+def string_reconstruction(kmer_list):
+    graph = de_graph_from_pattern(kmer_list)
+    path = eulerian_path(graph).split("->")
+    return spell_string_by_path(path)
+
+
+k = 4
+
+kmer_list = [
+    "CTTA",
+    "ACCA",
+    "TACC",
+    "GGCT",
+    "GCTT",
+    "TTAC"
+]
+
+output = "GGCTTACCA"
+
+print(string_reconstruction(kmer_list))
