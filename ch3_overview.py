@@ -34,7 +34,7 @@ def spell_string_by_path(text):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def get_adjacency_dict(patterns):
+def overlap_graph(patterns):
     adjacency_dict = dict.fromkeys(patterns)
     for node1 in adjacency_dict:
         suffix = node1[1:]
@@ -55,15 +55,14 @@ def get_adjacency_dict(patterns):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def de_graph_from_string(text, k):
-    adjacency_dict = dict()
-    for i in range(len(text) - k+1):
-        kmer = text[i:i+k-1]
-        next_kmer = text[i+1:i+k]
-        if kmer not in adjacency_dict:
-            adjacency_dict[kmer] = [next_kmer]
-        else:
-            adjacency_dict[kmer].append(next_kmer)
+def dbg_from_string(text, k):
+    patterns = [text[i:i+k] for i in range(len(text))]
+    adjacency_dict = defaultdict(list)
+    for kmer in patterns:
+        prefix = kmer[:-1]
+        suffix = kmer[1:]
+        adjacency_dict[prefix].append(suffix)
+        adjacency_dict[suffix]  # init suffix in case it has no outgoing edges
     return adjacency_dict
 
 
@@ -77,15 +76,13 @@ def de_graph_from_string(text, k):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def de_graph_from_pattern(patterns):
-    adjacency_dict = dict()
+def debruijn_graph(patterns):
+    adjacency_dict = defaultdict(list)
     for kmer in patterns:
         prefix = kmer[:-1]
         suffix = kmer[1:]
-        if prefix not in adjacency_dict:
-            adjacency_dict[prefix] = [suffix]
-        else:
-            adjacency_dict[prefix].append(suffix)
+        adjacency_dict[prefix].append(suffix)
+        adjacency_dict[suffix]  # init suffix in case it has no outgoing edges
     return adjacency_dict
 
 
@@ -174,44 +171,10 @@ def eulerian_path(graph):
 
 # The text then states we now have a method to assemble a genome, as the string reconstruction problem reduces to
 # finding a Eulerian path in the De Bruijn graph generated from reads
-# TODO: need to fix both implementation and conceptual identify of graph/adj dict (overlap vs DBG)
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def de_graph_from_pattern(patterns):
-    adjacency_dict = defaultdict(list)
-    for kmer in patterns:
-        prefix = kmer[:-1]
-        suffix = kmer[1:]
-        adjacency_dict[prefix].append(suffix)
-        adjacency_dict[suffix]  # init suffix in case it has no outgoing edges
-    return adjacency_dict
-
-
-def spell_string_by_path(text):
-    string = [text[0]]
-    for pattern in text[1:]:
-        string.append(pattern[-1])
-    return "".join(string)
-
-
 def string_reconstruction(kmer_list):
-    graph = de_graph_from_pattern(kmer_list)
+    graph = debruijn_graph(kmer_list)
     path = eulerian_path(graph).split("->")
     return spell_string_by_path(path)
-
-
-k = 4
-
-kmer_list = [
-    "CTTA",
-    "ACCA",
-    "TACC",
-    "GGCT",
-    "GCTT",
-    "TTAC"
-]
-
-output = "GGCTTACCA"
-
-print(string_reconstruction(kmer_list))
