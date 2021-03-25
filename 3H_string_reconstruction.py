@@ -1,4 +1,4 @@
-# Implementing code to anser the string reconstruction problem by finding a Eulerian path in the De Bruijn graph of
+# Implementing code to solve the string reconstruction problem by finding a Eulerian path in the De Bruijn graph of
 # sequenced reads.
 
 # Problem 3H in the BALA textbook/Rosalind
@@ -22,6 +22,17 @@ import sys
 import fileinput
 import pandas as pd
 from collections import defaultdict
+
+
+def spell_string_by_path(text):
+    """
+    text: list of DNA strings assumed to be overlapping by len(string)-1
+    returns the complete glued string
+    """
+    string = [text[0]]
+    for pattern in text[1:]:
+        string.append(pattern[-1])
+    return "".join(string)
 
 
 def debruin_graph(patterns):
@@ -86,22 +97,35 @@ def eulerian_path(graph):
             path.append(current_path.pop())  # Remove the current node and put it in the cycle
 
     path = "->".join(path[::-1])  # print in reverse
-    print(path)
+    return path
+
+
+def string_reconstruction(kmer_list):
+    """
+    kmer_list: list of equal length kmers
+    returns a string that uses each kmer exactly once, with kmers overlapping by len(kmer) - 1
+    """
+    graph = debruin_graph(kmer_list)
+    path = eulerian_path(graph).split("->")
+    return spell_string_by_path(path)
 
 
 def main():
     """
-    Read the input file, parse the arguments, and finds eulerian path
+    Read the input file, parse the arguments, and returns the reconstructed string
     """
     argv = list(sys.argv)
+    input_k = None  # don't actually need to use this!
     input_text = []
 
     for line in fileinput.input(argv[1]):
         if len(line) > 0:
-            input_text.append(line.replace('\n', ''))
+            if input_k is None:
+                input_k = int(line.replace('\n', ''))
+            else:
+                input_text.append(line.replace('\n', ''))
 
-    graph = parse_graph(input_text)
-    eulerian_path(graph)
+    print(string_reconstruction(input_text))
 
 
 if __name__ == "__main__":
