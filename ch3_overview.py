@@ -178,3 +178,39 @@ def string_reconstruction(kmer_list):
     graph = debruijn_graph(kmer_list)
     path = eulerian_path(graph).split("->")
     return spell_string_by_path(path)
+
+
+# Then notes that we are capable of constructing the k-universal string for any k - in particular, interested in
+# a circular string, akin to a circular genome, like a bacterial chromosome
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# def binary_kmers(k, kmer=""):
+#     # https://stackoverflow.com/questions/64890117/
+#     if len(kmer) == k:
+#         print(kmer)
+#     else:
+#         binary_kmers(k, kmer + "0")
+#         binary_kmers(k, kmer + "1")
+
+
+def binary_kmers(k):
+    # https://stackoverflow.com/questions/64890117/
+    def recursion(k, kmer="", kmer_list=[]):
+        if len(kmer) == k:
+            kmer_list.append(kmer)
+        else:
+            recursion(k, kmer + "0", kmer_list)
+            recursion(k, kmer + "1", kmer_list)
+        return kmer_list
+    return recursion(k)
+
+
+def k_circular_universal_string(k):
+    kmer_list = binary_kmers(k)
+    dbg = debruijn_graph(kmer_list)
+    cycle = eulerian_cycle(dbg).split("->")
+    return spell_string_by_path(cycle)
+
+
+print(k_circular_universal_string(4))
