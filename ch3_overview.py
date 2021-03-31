@@ -180,18 +180,11 @@ def string_reconstruction(kmer_list):
     return spell_string_by_path(path)
 
 
-# Then notes that we are capable of constructing the k-universal string for any k - in particular, interested in
-# a circular string, akin to a circular genome, like a bacterial chromosome
+# Then notes that we are capable of constructing the k-universal string for any k, as this reduces to finding a Eulerian
+# cycle in the De Bruijn Graph. In particular, interested in a circular string like a bacterial chromosome. Uses binary
+# kmers as an example, where a k-universal string contains every binary kmer exactly once. Eg, for k=3 the string
+# 01110100 contains all 8 binary kmers, mindful that you can loop back (011, 111, 110, 101, 010, 100, 000, 001)
 # ----------------------------------------------------------------------------------------------------------------------
-
-
-# def binary_kmers(k, kmer=""):
-#     # https://stackoverflow.com/questions/64890117/
-#     if len(kmer) == k:
-#         print(kmer)
-#     else:
-#         binary_kmers(k, kmer + "0")
-#         binary_kmers(k, kmer + "1")
 
 
 def binary_kmers(k):
@@ -210,7 +203,5 @@ def k_circular_universal_string(k):
     kmer_list = binary_kmers(k)
     dbg = debruijn_graph(kmer_list)
     cycle = eulerian_cycle(dbg).split("->")
-    return spell_string_by_path(cycle)
-
-
-print(k_circular_universal_string(4))
+    path = spell_string_by_path(cycle)
+    return path[:len(path) - k+1]
