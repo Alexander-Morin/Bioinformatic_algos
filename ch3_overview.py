@@ -205,3 +205,28 @@ def k_circular_universal_string(k):
     cycle = eulerian_cycle(dbg).split("->")
     path = spell_string_by_path(cycle)
     return path[:len(path) - k+1]
+
+
+# Notes that assembling a random text is trivial, as random strings are not expected to have long repeats. And as read
+# length becomes longer and longer, the DBG becomes less tangled - when reads become longer than repeats, it turns into
+# a path. However, difficult to generate long and accurate reads. Read pairs then used as an improvement - two reads of
+# length k, separated by unknown distance, d. A read pair of Read1 and Read2 corresponds to two edges in DBG(reads) -
+# these two reads are separated by d, there must be a path of length k + d + 1 connecting the node at the beginning of
+# Read1 with the node at the end of edge for Read2. If there is only one path connecting these nodes, or if all such
+# paths spell out the same string, the read pair can be transformed into a virtual read of length 2 * k + d. In reality,
+# repetitive regions complicate this scenario. Instead, analyze using paired composition: given a string text, a
+# (k,d)-mer is a pair of kmers separated by d. (ATG|GGG) is a (3,4)-mer in TAATGCCATGGGATGTT.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def paired_composition(text, k, d):
+    kmer_list = []
+    for i in range(len(text) - (2*k-d+1)):
+        kmer1 = text[i:i+k]
+        kmer2 = text[(i+d+k):(i+2*k+d)]
+        kmer_list.append(kmer1 + "|" + kmer2)
+    kmer_list.sort()
+    return kmer_list
+
+text = "TAATGCCATGGGATGTT"
+print(paired_composition(text, 3, 1))
