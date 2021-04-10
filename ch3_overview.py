@@ -1,7 +1,6 @@
 # Chapter 3 is focused on genome assembly
 
 from random import choice
-# import numpy as np
 import pandas as pd
 from collections import defaultdict
 
@@ -228,5 +227,42 @@ def paired_composition(text, k, d):
     kmer_list.sort()
     return kmer_list
 
-text = "TAATGCCATGGGATGTT"
-print(paired_composition(text, 3, 1))
+
+# It is noted that while the example text has TAATGCCATGGGATGTT has 3 repeated 3mers, it has no repeated (3,1)mers in
+# its paired composition. Additionally, the similar text TAAAGCCATGGGATGTT has the same 3mer composition, but different
+# (3,1)mer paired compositions, allowing us to distinguish between them. The goal then becomes to adapt the DBG to
+# reconstruct a string from its (k,d)mer paired composition. Given a (k,d)-mer (a1...ak | b1...bk) we have the following
+# (k-1, d+1)mers: PREFIX = (a1...ak-1 | b1...bk-1) and SUFFIX = (a2...ak | b2...bk). For consecutive (k,d)mers in text,
+# the suffix of the first (k,d)mer is equal to the prefix of the second (k,d)mer. Eg, for the consecutive (3,1)mers
+# (TAA|GCC) and (AAT|CCA) in TAATGCCATGGGATGTT: SUFFIX((TAA|GCC)) = PREFIX((AAT|CCA)) = (AA|CC)). We can form a path
+# graph of text that represents a path formed by len(text) - (k+d+k) + 1 edges corresponding to all (k,d)mers in text.
+# Edges in this path are labeled by (k,d)mers
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def spell_edge(node_list):
+    path = []
+    for i in range(len(node_list) - 1):  # combine the (k-1) prefix/suffix to form the kmer edge
+        path.append(node_list[i] + node_list[i+1][-1])
+    return path
+
+
+def path_graph(text, k, d):
+    node_pair1 = []
+    node_pair2 = []
+    for i in range(len(text) - (2*k-d)):  # creates paired (k-1)mers prefix/suffix nodes
+        read1 = text[i:i+k-d]
+        read2 = text[(i+d+k):(i+2*k+d-1)]
+        node_pair1.append(read1)
+        node_pair2.append(read2)
+    path1 = spell_edge(node_pair1)
+    path2 = spell_edge(node_pair2)
+    paired_path = list(map((lambda x, y: x + "|" + y), path1, path2))
+    return " -> ".join(paired_path)
+
+
+# The paired DBG is formed by gluing identical nodes in path graph. This results in a less tangled graph than DBG
+# constructed from individual reads. The text then defines composition graph(k, d, text) as the graph consisting of the
+# len(text) - (k + d + k) + 1 isolated edges labeled by the (k,d)mers in text - gluing identical nodes results in the
+# same DBG as gluing identical nodes in the path graph. In practice we don't know text, but we can form the composition
+# graph directly from the (k,d)mer composition of text, and from here construct a DBG and find a Eulerian path.
