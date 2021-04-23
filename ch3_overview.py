@@ -2,7 +2,7 @@
 
 from random import choice
 import pandas as pd
-from collections import defaultdict
+from collections import defaultdict, deque
 
 # First, focus on the more simplistic case where are all reads are kmers of length k, all reads come from the same
 # strand, there are no errors, and they exhibit perfect coverage (every kmer substring of the genome has a read).
@@ -265,4 +265,104 @@ def path_graph(text, k, d):
 # constructed from individual reads. The text then defines composition graph(k, d, text) as the graph consisting of the
 # len(text) - (k + d + k) + 1 isolated edges labeled by the (k,d)mers in text - gluing identical nodes results in the
 # same DBG as gluing identical nodes in the path graph. In practice we don't know text, but we can form the composition
-# graph directly from the (k,d)mer composition of text, and from here construct a DBG and find a Eulerian path.
+# graph directly from the (k,d)mer composition of text, and from here construct a DBG and find a Eulerian path. However,
+# not every Eulerian path in the paired DBG spells out a solution to the String Reconstruction from Read-Pairs problem.
+# Therefore, need to be able to generate all Eulerian cycles: The idea is to transform a single labeled directed graph
+# containing n >= 1 cylces to n different simple directed graphs, each with a single Eulerian cycle. This transformation
+# is easily invertible: given a unique Eulerian cycle in one of the simple graphs, we can find it in the original.
+# Given a node v in Graph with indegree > 1 and with incoming edge (u, v) and outgoing edge (v, w), we construct a
+# simpler (u, v, w) bypass graph where edges (u, v) and (v, w) are removed, and add a new node x with edges (u, x) and
+# (v, x). These new edges inherit the labels for the removed edges: given an incoming edge (u, v) into v along with k
+# outgoing edges (v, w1) ... (v, wk) from v, we can construct k different bypass graphs, and each will have a unique
+# Eulerian cycle. So we iteratively construct every bypass graph until we have a large family of simple graphs
+# ----------------------------------------------------------------------------------------------------------------------
+
+# TODO: not all bypass graphs get added. eg for node 2 each of 4 gets added, but terminates before getting to 6
+
+def bfs(graph):
+    s = choice(list(graph.keys()))  # start with random node
+    visited = [False] * len(graph.keys())  # array keeps track of what nodes we have already seen
+    queue = deque([s])  # use a queue to track nodes that have yet to be visited, beginning with start
+    visited[int(s)] = True
+    while queue:
+        s = queue.popleft()
+        for i in graph[s]:
+            if not visited[int(i)]:
+                queue.append(i)
+                visited[int(i)] = True
+    return visited
+
+
+def get_bypass_graphs(graph):
+    all_graphs = [graph]
+    for g in all_graphs:
+        print(all_graphs)
+        edges_in = count_edges(g)["Edges_in"]
+        if all(edges_in == 1):
+            continue
+        in_gt1 = choice(edges_in[edges_in > 1].index.values)
+        edges_in = [edge for edge in g if in_gt1 in g[edge]]
+        edges_out = g[in_gt1]
+        for edge1 in edges_in:
+            for edge2 in edges_out:
+                g_cp = g.copy()
+                g_cp[edge1] = [edge2]
+                all_graphs.append(g_cp)
+            all_graphs.remove(g)
+    return all_graphs
+
+
+def spell_string_by_gapped_pattern(patterns, k, d):
+    first_patterns = [kmer.split("|")[0] for kmer in patterns]
+    second_patterns = [kmer.split("|")[1] for kmer in patterns]
+    prefix_string = spell_string_by_path(first_patterns)
+    suffix_string = spell_string_by_path(second_patterns)
+    for i in range(k+d+1, len(prefix_string)):
+        if prefix_string[i] != suffix_string[i-k-d]:
+            return "There is no consensus pattern"
+    return prefix_string + suffix_string[len(suffix_string) - (k+d):]
+
+
+
+graph_input = [
+    "0 -> 3",
+    "1 -> 0",
+    "2 -> 1,6",
+    "3 -> 2",
+    "4 -> 2",
+    "5 -> 4",
+    "6 -> 5,8",
+    "7 -> 9",
+    "8 -> 7",
+    "9 -> 6"
+]
+
+
+
+simple_graph_input = [
+    "0 -> 1",
+    "1 -> 2",
+    "2 -> 3",
+    "3 -> 0"
+]
+
+path_input = [
+"GACC|GCGC",
+"ACCG|CGCC",
+"CCGA|GCCG",
+"CGAG|CCGG",
+"GAGC|CGGA"
+]
+
+graph = parse_graph(graph_input)
+# graph = parse_graph(simple_graph_input)
+# print(count_edges(graph)["Edges_in"])
+# print(graph)
+# print(bfs(graph))
+# tt = get_bypass_graphs(graph)
+# for i in tt:
+#     print(i)
+dd = spell_string_by_gapped_pattern(path_input, 4, 2)
+print(dd)
+
+
