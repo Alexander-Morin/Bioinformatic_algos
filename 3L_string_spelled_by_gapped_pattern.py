@@ -44,6 +44,7 @@ def spell_string_by_gapped_pattern(patterns, k, d):
     second_patterns = [kmer.split("|")[1] for kmer in patterns]
     prefix_string = spell_string_by_path(first_patterns)
     suffix_string = spell_string_by_path(second_patterns)
+    # imagine lining up rows of the reads, where each column position must match
     for i in range(k+d+1, len(prefix_string)):
         if prefix_string[i] != suffix_string[i-k-d]:
             return "There is no consensus pattern"
