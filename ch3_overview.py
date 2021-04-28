@@ -1,4 +1,6 @@
 # Chapter 3 is focused on genome assembly
+# https://doi.org/10.1038/nbt.2023
+# https://www.cs.jhu.edu/~langmea/resources/lecture_notes/assembly_dbg.pdf
 
 from random import choice
 import pandas as pd
@@ -262,22 +264,61 @@ def path_graph(text, k, d):
 
 
 # The paired DBG is formed by gluing identical nodes in path graph. This results in a less tangled graph than DBG
-# constructed from individual reads. The text then defines composition graph(k, d, text) as the graph consisting of the
-# len(text) - (k + d + k) + 1 isolated edges labeled by the (k,d)mers in text - gluing identical nodes results in the
-# same DBG as gluing identical nodes in the path graph. In practice we don't know text, but we can form the composition
-# graph directly from the (k,d)mer composition of text, and from here construct a DBG and find a Eulerian path. However,
-# not every Eulerian path in the paired DBG spells out a solution to the String Reconstruction from Read-Pairs problem.
-# Therefore, need to be able to generate all Eulerian cycles: The idea is to transform a single labeled directed graph
-# containing n >= 1 cylces to n different simple directed graphs, each with a single Eulerian cycle. This transformation
-# is easily invertible: given a unique Eulerian cycle in one of the simple graphs, we can find it in the original.
-# Given a node v in Graph with indegree > 1 and with incoming edge (u, v) and outgoing edge (v, w), we construct a
-# simpler (u, v, w) bypass graph where edges (u, v) and (v, w) are removed, and add a new node x with edges (u, x) and
-# (v, x). These new edges inherit the labels for the removed edges: given an incoming edge (u, v) into v along with k
-# outgoing edges (v, w1) ... (v, wk) from v, we can construct k different bypass graphs, and each will have a unique
-# Eulerian cycle. So we iteratively construct every bypass graph until we have a large family of simple graphs
+# constructed from the individual reads of the paired reads.
 # ----------------------------------------------------------------------------------------------------------------------
 
-# TODO: not all bypass graphs get added. eg for node 2 each of 4 gets added, but terminates before getting to 6
+
+def paired_dbg_from_text(text, k, d):
+    read1_patterns = [text[i:i+k] for i in range(len(text) - (2*k+d-1))]
+    read2_patterns = [text[i:i+k] for i in range(k+d, len(text) - k+1)]
+    graph = defaultdict(list)
+    for i in range(len(read1_patterns)):
+        read_pair_prefix = "|".join([read1_patterns[i][:-1], read2_patterns[i][:-1]])
+        read_pair_suffix = "|".join([read1_patterns[i][1:], read2_patterns[i][1:]])
+        graph[read_pair_prefix].append(read_pair_suffix)
+        graph[read_pair_suffix]  # init suffix in case it has no outgoing edges
+    return graph
+
+
+# The text then defines composition graph(k, d, text) as the graph consisting of the len(text) - (k + d + k) + 1
+# isolated edges labeled by the (k,d)mers in text - gluing identical nodes results in the same DBG as gluing identical
+# nodes in the path graph. In practice we don't know text, but we can form the composition graph directly from the
+# (k,d)mer composition of text, and from here construct a DBG and find a Eulerian path.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def split_read_patterns(paired_list):
+    read1_patterns = []
+    read2_patterns = []
+    for pattern in paired_list:
+        read_split = pattern.split("|")
+        read1_patterns.append(read_split[0])
+        read2_patterns.append(read_split[1])
+    return read1_patterns, read2_patterns
+
+
+def paired_dbg_from_composition(paired_list):
+    read1_patterns, read2_patterns = split_read_patterns(paired_list)
+    graph = defaultdict(list)
+    for i in range(len(read1_patterns)):
+        read_pair_prefix = "|".join([read1_patterns[i][:-1], read2_patterns[i][:-1]])
+        read_pair_suffix = "|".join([read1_patterns[i][1:], read2_patterns[i][1:]])
+        graph[read_pair_prefix].append(read_pair_suffix)
+        graph[read_pair_suffix]  # init suffix in case it has no outgoing edges
+    return graph
+
+
+# However, not every Eulerian path in the paired DBG spells out a solution to the String Reconstruction from Read-Pairs
+# problem. Therefore, need to be able to generate all Eulerian cycles: The idea is to transform a single labeled
+# directed graph containing n >= 1 cylces to n different simple directed graphs, each with a single Eulerian cycle.
+# This transformation is easily invertible: given a unique Eulerian cycle in one of the simple graphs, we can find it in
+# the original. Given a node v in Graph with indegree > 1 and with incoming edge (u, v) and outgoing edge (v, w),
+# we construct a simpler (u, v, w) bypass graph where edges (u, v) and (v, w) are removed, and add a new node x with
+# edges (u, x) and (v, x). These new edges inherit the labels for the removed edges: given an incoming edge (u, v) into
+# v along with k outgoing edges (v, w1) ... (v, wk) from v, we can construct k different bypass graphs, and each will
+# have a unique Eulerian cycle. Iteratively construct every bypass graph until we have a large family of simple graphs
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 def bfs(graph):
     s = choice(list(graph.keys()))  # start with random node
@@ -296,20 +337,17 @@ def bfs(graph):
 def get_bypass_graphs(graph):
     all_graphs = [graph]
     for g in all_graphs:
-        print(all_graphs)
         edges_in = count_edges(g)["Edges_in"]
         if all(edges_in == 1):
             continue
         in_gt1 = choice(edges_in[edges_in > 1].index.values)
         edges_in = [edge for edge in g if in_gt1 in g[edge]]
         edges_out = g[in_gt1]
-        for edge1 in edges_in:
-            for edge2 in edges_out:
-                g_cp = g.copy()
-                g_cp[edge1] = [edge2]
-                all_graphs.append(g_cp)
-            all_graphs.remove(g)
+        print(in_gt1, edges_in, edges_out)
     return all_graphs
+
+
+# Once we have all graphs, we can
 
 
 def spell_string_by_gapped_pattern(patterns, k, d):
@@ -337,8 +375,6 @@ graph_input = [
     "9 -> 6"
 ]
 
-
-
 simple_graph_input = [
     "0 -> 1",
     "1 -> 2",
@@ -347,14 +383,21 @@ simple_graph_input = [
 ]
 
 path_input = [
-"GACC|GCGC",
-"ACCG|CGCC",
-"CCGA|GCCG",
-"CGAG|CCGG",
-"GAGC|CGGA"
+"GAGA|TTGA",
+"TCGT|GATG",
+"CGTG|ATGT",
+"TGGT|TGAG",
+"GTGA|TGTT",
+"GTGG|GTGA",
+"TGAG|GTTG",
+"GGTC|GAGA",
+"GTCG|AGAT"
 ]
 
-graph = parse_graph(graph_input)
+
+print(paired_dbg_from_composition(path_input))
+
+# graph = parse_graph(graph_input)
 # graph = parse_graph(simple_graph_input)
 # print(count_edges(graph)["Edges_in"])
 # print(graph)
@@ -362,7 +405,7 @@ graph = parse_graph(graph_input)
 # tt = get_bypass_graphs(graph)
 # for i in tt:
 #     print(i)
-dd = spell_string_by_gapped_pattern(path_input, 4, 2)
-print(dd)
+# dd = spell_string_by_gapped_pattern(path_input, 4, 2)
+# print(dd)
 
 
