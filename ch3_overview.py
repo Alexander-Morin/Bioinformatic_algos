@@ -338,12 +338,20 @@ def get_bypass_graphs(graph):
     all_graphs = [graph]
     for g in all_graphs:
         edges_in = count_edges(g)["Edges_in"]
-        if all(edges_in == 1):
+        if all(edges_in < 2):
             continue
         in_gt1 = choice(edges_in[edges_in > 1].index.values)
         edges_in = [edge for edge in g if in_gt1 in g[edge]]
         edges_out = g[in_gt1]
-        print(in_gt1, edges_in, edges_out)
+        # print(in_gt1, edges_in, edges_out)
+        for node1 in edges_in:
+            for node2 in edges_out:
+                g_cp = g.copy()
+                g_cp[node1] = [node2]
+                if all(bfs(g_cp)):
+                    print(g_cp)
+                    all_graphs.append(g_cp)
+        all_graphs.remove(g)
     return all_graphs
 
 
@@ -360,6 +368,15 @@ def spell_string_by_gapped_pattern(patterns, k, d):
             return "There is no consensus pattern"
     return prefix_string + suffix_string[len(suffix_string) - (k+d):]
 
+
+def spell_all_graphs(graph_list, k, d):
+    for g in graph_list:
+        cycle = eulerian_path(g).split("->")
+        path = spell_string_by_gapped_pattern(cycle, k, d)
+        print(cycle)
+        print(path)
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 graph_input = [
@@ -382,7 +399,7 @@ simple_graph_input = [
     "3 -> 0"
 ]
 
-path_input = [
+paired_input = [
 "GAGA|TTGA",
 "TCGT|GATG",
 "CGTG|ATGT",
@@ -395,17 +412,14 @@ path_input = [
 ]
 
 
-print(paired_dbg_from_composition(path_input))
-
+graph = paired_dbg_from_composition(paired_input)
 # graph = parse_graph(graph_input)
 # graph = parse_graph(simple_graph_input)
-# print(count_edges(graph)["Edges_in"])
-# print(graph)
+print(graph)
+print(count_edges(graph)["Edges_in"])
 # print(bfs(graph))
-# tt = get_bypass_graphs(graph)
-# for i in tt:
-#     print(i)
-# dd = spell_string_by_gapped_pattern(path_input, 4, 2)
-# print(dd)
+bpg = get_bypass_graphs(graph)
+print(bpg)
+print(spell_all_graphs(bpg, 4, 2))
 
 
