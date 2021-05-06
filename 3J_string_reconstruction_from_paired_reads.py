@@ -180,7 +180,7 @@ def spell_string_by_gapped_pattern(patterns, k, d):
     return prefix_string + suffix_string[len(suffix_string) - (k+d):]
 
 
-def spell_all_graphs(graph_list, k, d):
+def spell_all_eulerian_paths(graph_list, k, d):
     """
     graph_list: list of graphs as adjacency lists/dicts
     # k: the size of the kmers
@@ -215,7 +215,7 @@ def main():
 
     graph = paired_dbg_from_composition(input_text)
     bpg = get_bypass_graphs(graph)
-    spell_all_graphs(bpg, input_k, input_d)
+    spell_all_eulerian_paths(bpg, input_k, input_d)
 
 
 if __name__ == "__main__":

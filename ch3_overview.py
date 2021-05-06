@@ -316,7 +316,8 @@ def paired_dbg_from_composition(paired_list):
 # we construct a simpler (u, v, w) bypass graph where edges (u, v) and (v, w) are removed, and add a new node x with
 # edges (u, x) and (v, x). These new edges inherit the labels for the removed edges: given an incoming edge (u, v) into
 # v along with k outgoing edges (v, w1) ... (v, wk) from v, we can construct k different bypass graphs, and each will
-# have a unique Eulerian cycle. Iteratively construct every bypass graph until we have a large family of simple graphs
+# have a unique Eulerian cycle. Iteratively construct every bypass graph, keeping only those that are connected, which
+# can be checked using breadth first search
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -343,19 +344,19 @@ def get_bypass_graphs(graph):
         in_gt1 = choice(edges_in[edges_in > 1].index.values)
         edges_in = [edge for edge in g if in_gt1 in g[edge]]
         edges_out = g[in_gt1]
-        # print(in_gt1, edges_in, edges_out)
         for node1 in edges_in:
             for node2 in edges_out:
                 g_cp = g.copy()
                 g_cp[node1] = [node2]
-                if all(bfs(g_cp)):
-                    print(g_cp)
+                if all(bfs(g_cp)):  # the more simple graph must be connected
                     all_graphs.append(g_cp)
         all_graphs.remove(g)
     return all_graphs
 
 
-# Once we have all graphs, we can
+# Once we have all of the simple bypass graphs, we can find a Eulerian path for each. For gapped paired reads, this
+# can be imagined by lining up the reads as rows, matching the columns to get the consensus base. However, not all
+# Eulerian paths in the paired DBG will give a consensus and should be discarded
 
 
 def spell_string_by_gapped_pattern(patterns, k, d):
@@ -369,12 +370,20 @@ def spell_string_by_gapped_pattern(patterns, k, d):
     return prefix_string + suffix_string[len(suffix_string) - (k+d):]
 
 
-def spell_all_graphs(graph_list, k, d):
+def spell_all_eulerian_paths(graph_list, k, d):
     for g in graph_list:
         cycle = eulerian_path(g).split("->")
         path = spell_string_by_gapped_pattern(cycle, k, d)
-        print(cycle)
         print(path)
+    return None
+
+
+def paired_read_string_reconstruction(input_text, k, d):
+    graph = paired_dbg_from_composition(input_text)
+    bpg = get_bypass_graphs(graph)
+    spell_all_eulerian_paths(bpg, k, d)
+    return None
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
