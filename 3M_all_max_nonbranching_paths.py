@@ -60,13 +60,16 @@ def count_edges(graph):
 def get_isolated_cycle(graph):
     all_cycles = []
     count_df = count_edges(graph)
+    count_df["Visited"] = False
     for start_node in graph.keys():
-        if start_node in [item for sublist in all_cycles for item in sublist]:
+        if count_df.at[start_node, "Visited"]:
             continue
-        if (count_df.loc[start_node, "Edges_in"] == 1) & (count_df.loc[start_node, "Edges_out"] == 1):
+        count_df.at[start_node, "Visited"] = True
+        if (count_df.loc[start_node, "Edges_in"] == 1) and (count_df.loc[start_node, "Edges_out"] == 1):
             next_node = graph[start_node][0]
             cycle = [start_node, next_node]
-            while ((count_df.loc[next_node, "Edges_in"] == 1) & (count_df.loc[next_node, "Edges_out"] == 1)).all():
+            while ((count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1)).all():
+                count_df.at[next_node, "Visited"] = True
                 next_node = graph[next_node][0]
                 cycle.append(next_node)
                 if next_node is start_node:
@@ -79,15 +82,14 @@ def maximal_nonbranching_paths(graph):
     paths = []
     count_df = count_edges(graph)
     for start_node in graph.keys():
-        if (count_df.loc[start_node, "Edges_in"] != 1) | (count_df.loc[start_node, "Edges_out"] != 1):
+        if (count_df.loc[start_node, "Edges_in"] != 1) or (count_df.loc[start_node, "Edges_out"] != 1):
             if count_df.loc[start_node, "Edges_out"] > 0:
                 for next_node in graph[start_node]:
                     nb_path = [start_node, next_node]
-                    while (count_df.loc[next_node, "Edges_in"] == 1) & (count_df.loc[next_node, "Edges_out"] == 1):
+                    while (count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1):
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     paths.append(nb_path)
-    print("paths done - find isolated cycles")
     for cycle in get_isolated_cycle(graph):
         paths.append(cycle)
     return paths
