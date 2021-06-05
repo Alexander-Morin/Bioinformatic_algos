@@ -213,7 +213,7 @@ def k_circular_universal_string(k):
 # a path. However, difficult to generate long and accurate reads. Read pairs then used as an improvement - two reads of
 # length k, separated by unknown distance, d. A read pair of Read1 and Read2 corresponds to two edges in DBG(reads) -
 # these two reads are separated by d, there must be a path of length k + d + 1 connecting the node at the beginning of
-# Read1 with the node at the end of edge for Read2. If there is only one path connecting these nodes, or if all such
+# Read1 with the node at the end of edge for Read2. **If** there is only one path connecting these nodes, or if all such
 # paths spell out the same string, the read pair can be transformed into a virtual read of length 2 * k + d. In reality,
 # repetitive regions complicate this scenario. Instead, analyze using paired composition: given a string text, a
 # (k,d)-mer is a pair of kmers separated by d. (ATG|GGG) is a (3,4)-mer in TAATGCCATGGGATGTT.
@@ -230,7 +230,7 @@ def paired_composition(text, k, d):
     return kmer_list
 
 
-# It is noted that while the example text has TAATGCCATGGGATGTT has 3 repeated 3mers, it has no repeated (3,1)mers in
+# It is noted that while the example text TAATGCCATGGGATGTT has 3 repeated 3mers, it has no repeated (3,1)mers in
 # its paired composition. Additionally, the similar text TAAAGCCATGGGATGTT has the same 3mer composition, but different
 # (3,1)mer paired compositions, allowing us to distinguish between them. The goal then becomes to adapt the DBG to
 # reconstruct a string from its (k,d)mer paired composition. Given a (k,d)-mer (a1...ak | b1...bk) we have the following
@@ -253,10 +253,8 @@ def path_graph(text, k, d):
     node_pair1 = []
     node_pair2 = []
     for i in range(len(text) - (2*k-d)):  # creates paired (k-1)mers prefix/suffix nodes
-        read1 = text[i:i+k-d]
-        read2 = text[(i+d+k):(i+2*k+d-1)]
-        node_pair1.append(read1)
-        node_pair2.append(read2)
+        node_pair1.append(text[i:i+k-d])  # read 1
+        node_pair2.append(text[(i+d+k):(i+2*k+d-1)])  # read 2
     path1 = spell_edge(node_pair1)
     path2 = spell_edge(node_pair2)
     paired_path = list(map((lambda x, y: x + "|" + y), path1, path2))
@@ -356,7 +354,7 @@ def get_bypass_graphs(graph):
 
 # Once we have all of the simple bypass graphs, we can find a Eulerian path for each, then spell the path from the
 # ordered gapped paired reads (this can be imagined by lining up the reads as rows with gaps, and matching the columns
-# to get the consensus base. However, not all Eulerian paths in the paired DBG will give a consensus string
+# to get the consensus base). However, not all Eulerian paths in the paired DBG will give a consensus string
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -386,33 +384,35 @@ def paired_read_string_reconstruction(input_text, k, d):
     return None
 
 
-# So far relied on some very generous assumptions. Defines coverage: if we have a kmer within the genome, coverage is
-# the number of reads to which this kmer belongs. So far we have assumed perfect kmer coverage, which just doesn't
-# happen. Eg, most Illumina reads are ~300nt, but still misses many 300mers in the genome, and nearly all reads have
-# errors. Then shows example of read breaking: gives a 20mer and 4 10mers, which don't cover every 10mer in the 20mer.
-# However, fragmenting the reads into 5mers provides perfect coverage of the 20mer. Trade-off: smaller k increases
-# chance of perfect coverage, but results in a more tangled DBG which may be harder to infer Euler path. Even after read
-# breaking, most assemblies still have gaps in kmer coverage, resulting in a DBG with missing edges, causing Euler
-# path to fail. So rather than go for entire genome, settle for contigs, which can be found from the DBG. A path
-# is non branching if it has node in and out = 1 for intermediate nodes of the path. Want the maximal of such paths:
-# these strings of nucleotides must be present in any given assembly with a given kmer composition. Contigs are
-# strings spelled by the maximal non branching paths in a DBG. Even if you have perfect coverage, rely on contigs
-# because repeats prevent inferring a unique Eulerian path. To find the maximal non branching path, iterate through
-# the non 1 in 1 out nodes and generate all paths, then finds isolated cycles in the graph
+# Defines coverage: if we have a kmer within the genome, coverage is the number of reads to which this kmer belongs. So
+# far we have assumed perfect kmer coverage, which just doesn't happen. Eg, most Illumina reads are ~300nt, but still
+# misses many 300mers in the genome, and nearly all reads have errors. Then shows example of read breaking: gives a
+# 20mer and 4 10mers, which don't cover every 10mer in the 20mer. However, fragmenting the reads into 5mers provides
+# perfect coverage of the 20mer. Trade-off: smaller k increases chance of perfect coverage, but results in a more
+# tangled DBG which may be harder to infer Euler path. Even after read breaking, most assemblies still have gaps in kmer
+# coverage, resulting in a DBG with missing edges, causing Euler path to fail. So rather than go for entire genome,
+# settle for contigs, which can be found from the DBG. A path is non branching if it has node in and out = 1 for
+# intermediate nodes of the path. Want the maximal of such paths: these strings of nucleotides must be present in any
+# given assembly with a given kmer composition. Contigs are strings spelled by the maximal non branching paths in a DBG.
+# Even if you have perfect coverage, rely on contigs because repeats prevent inferring a unique Eulerian path. To find
+# the maximal non branching path, iterate through the non 1 in 1 out nodes and generate all paths, then tack on
+# the isolated cycles in the graph
 # ----------------------------------------------------------------------------------------------------------------------
 
-# TODO: better job of the count df and condition
 
 def get_isolated_cycle(graph):
     all_cycles = []
     count_df = count_edges(graph)
+    count_df["Visited"] = False  # init column tracking if node has been visited
     for start_node in graph.keys():
-        if start_node in [item for sublist in all_cycles for item in sublist]:
+        if count_df.at[start_node, "Visited"]:  # skip if seen to prevent adding both n1->n2->n1 and n2->n1->n1
             continue
-        if (count_df.loc[start_node, "Edges_in"] == 1) & (count_df.loc[start_node, "Edges_out"] == 1):
+        count_df.at[start_node, "Visited"] = True
+        if (count_df.loc[start_node, "Edges_in"] == 1) and (count_df.loc[start_node, "Edges_out"] == 1):
             next_node = graph[start_node][0]
             cycle = [start_node, next_node]
-            while ((count_df.loc[next_node, "Edges_in"] == 1) & (count_df.loc[next_node, "Edges_out"] == 1)).all():
+            while ((count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1)).all():
+                count_df.at[next_node, "Visited"] = True
                 next_node = graph[next_node][0]
                 cycle.append(next_node)
                 if next_node is start_node:
@@ -424,17 +424,22 @@ def get_isolated_cycle(graph):
 def maximal_nonbranching_paths(graph):
     paths = []
     count_df = count_edges(graph)
-    print(count_df)
     for start_node in graph.keys():
-        if (count_df.loc[start_node, "Edges_in"] != 1) | (count_df.loc[start_node, "Edges_out"] != 1):
+        if (count_df.loc[start_node, "Edges_in"] != 1) or (count_df.loc[start_node, "Edges_out"] != 1):
             if count_df.loc[start_node, "Edges_out"] > 0:
                 for next_node in graph[start_node]:
                     nb_path = [start_node, next_node]
-                    while (count_df.loc[next_node, "Edges_in"] == 1) & (count_df.loc[next_node, "Edges_out"] == 1):
+                    while (count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1):
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     paths.append(nb_path)
+    for cycle in get_isolated_cycle(graph):
+        paths.append(cycle)
     return paths
+
+
+# Example inputs
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 graph_input = [
@@ -458,7 +463,6 @@ nbp_input = [
     "7 -> 6"
 ]
 
-
 paired_input = [
 "GAGA|TTGA",
 "TCGT|GATG",
@@ -471,10 +475,6 @@ paired_input = [
 "GTCG|AGAT"
 ]
 
+text_input = "TAATGCCATGGGATGTT"
 
-graph = parse_graph(nbp_input)
-df = count_edges(graph)
-print(graph)
-print(maximal_nonbranching_paths(graph))
-print(get_isolated_cycle(graph))
-
+print(path_graph(text_input, k=3, d=1))
