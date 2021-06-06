@@ -400,7 +400,7 @@ def paired_read_string_reconstruction(input_text, k, d):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def is_nonbranching(count_df, node):
+def is_1in1out(count_df, node):
     return (count_df.loc[node, "Edges_in"] == 1) and (count_df.loc[node, "Edges_out"] == 1)
 
 
@@ -412,10 +412,10 @@ def get_isolated_cycle(graph):
         if count_df.at[start_node, "Visited"]:  # skip if seen to prevent adding both n1->n2->n1 and n2->n1->n1
             continue
         count_df.at[start_node, "Visited"] = True
-        if (count_df.loc[start_node, "Edges_in"] == 1) and (count_df.loc[start_node, "Edges_out"] == 1):
+        if is_1in1out(count_df, start_node):
             next_node = graph[start_node][0]
             cycle = [start_node, next_node]
-            while ((count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1)).all():
+            while is_1in1out(count_df, next_node).all():
                 count_df.at[next_node, "Visited"] = True
                 next_node = graph[next_node][0]
                 cycle.append(next_node)
@@ -429,15 +429,15 @@ def maximal_nonbranching_paths(graph):
     paths = []
     count_df = count_edges(graph)
     for start_node in graph.keys():
-        if (count_df.loc[start_node, "Edges_in"] != 1) or (count_df.loc[start_node, "Edges_out"] != 1):
+        if not is_1in1out(count_df, start_node):  # iterate and start from all non 1-in-1-out nodes
             if count_df.loc[start_node, "Edges_out"] > 0:
                 for next_node in graph[start_node]:
                     nb_path = [start_node, next_node]
-                    while (count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1):
+                    while is_1in1out(count_df, next_node).all():  # all intermediate nodes are 1-in-1-out
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     paths.append(nb_path)
-    for cycle in get_isolated_cycle(graph):
+    for cycle in get_isolated_cycle(graph):  # need to include isolated cycles, eg 6 -> 7 -> 6
         paths.append(cycle)
     return paths
 
@@ -481,4 +481,8 @@ paired_input = [
 
 text_input = "TAATGCCATGGGATGTT"
 
-print(path_graph(text_input, k=3, d=1))
+# print(path_graph(text_input, k=3, d=1))
+graph = parse_graph(nbp_input)
+count_df = count_edges(graph)
+print(count_df)
+print(is_1in1out(count_df, "1"))

@@ -1,5 +1,8 @@
 # Implementing code to find the all of the maximal non-branching paths of a graph - the longest paths whose intermediate
-# nodes all have in/out degree equal to 1. This is used to assemble contigs in a genome
+# nodes all have in/out degree equal to 1. This is used to assemble contigs in a genome, which are typically required
+# as repeats in genomes make it impossible to find a unique Eulerian path, even with perfect coverage. The strings
+# spelled by these contigs/maximal non branching paths are useful as they will be present in any given assembly with a
+# given kmer composition.
 
 # Problem 3M in the BALA textbook/Rosalind
 
@@ -58,7 +61,12 @@ def count_edges(graph):
     return edge_df
 
 
-def is_nonbranching(count_df, node):
+def is_1in1out(count_df, node):
+    """
+    count_df: pandas DF that has the count of edges in and edges out
+    node: an index node of count_df
+    returns True/False whether the input node has edges in and edges out equal to one
+    """
     return (count_df.loc[node, "Edges_in"] == 1) and (count_df.loc[node, "Edges_out"] == 1)
 
 
@@ -74,10 +82,10 @@ def get_isolated_cycle(graph):
         if count_df.at[start_node, "Visited"]:  # skip if seen to prevent adding both n1->n2->n1 and n2->n1->n1
             continue
         count_df.at[start_node, "Visited"] = True
-        if (count_df.loc[start_node, "Edges_in"] == 1) and (count_df.loc[start_node, "Edges_out"] == 1):
+        if is_1in1out(count_df, start_node):
             next_node = graph[start_node][0]
             cycle = [start_node, next_node]
-            while ((count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1)).all():
+            while is_1in1out(count_df, next_node).all():
                 count_df.at[next_node, "Visited"] = True
                 next_node = graph[next_node][0]
                 cycle.append(next_node)
@@ -90,27 +98,28 @@ def get_isolated_cycle(graph):
 def maximal_nonbranching_paths(graph):
     """
     graph: adjacency list (as a dict) of the graph
-    returns a list of the isolated cycles in the graph - eg, [7 -> 6 -> 7]
-     """
+    returns a list of all of the longest paths in graph that are non branching (all intermediate nodes have in and out
+    degree equal to one)
+    """
     paths = []
     count_df = count_edges(graph)
     for start_node in graph.keys():
-        if (count_df.loc[start_node, "Edges_in"] != 1) or (count_df.loc[start_node, "Edges_out"] != 1):
+        if not is_1in1out(count_df, start_node):  # iterate and start from all non 1-in-1-out nodes
             if count_df.loc[start_node, "Edges_out"] > 0:
                 for next_node in graph[start_node]:
                     nb_path = [start_node, next_node]
-                    while (count_df.loc[next_node, "Edges_in"] == 1) and (count_df.loc[next_node, "Edges_out"] == 1):
+                    while is_1in1out(count_df, next_node).all():  # all intermediate nodes are 1-in-1-out
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     paths.append(nb_path)
-    for cycle in get_isolated_cycle(graph):
+    for cycle in get_isolated_cycle(graph):  # need to include isolated cycles, eg 6 -> 7 -> 6
         paths.append(cycle)
     return paths
 
 
 def main():
     """
-    Read the input file, parse the arguments, and returns the reconstructed string
+    Read the input file, parse the arguments, and prints all maximal non branching paths
     """
     argv = list(sys.argv)
     input_text = []
