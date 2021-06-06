@@ -1,6 +1,7 @@
-# Implementing code
+# Implementing code to find the all of the maximal non-branching paths of a graph - the longest paths whose intermediate
+# nodes all have in/out degree equal to 1. This is used to assemble contigs in a genome
 
-# Problem 3J in the BALA textbook/Rosalind
+# Problem 3M in the BALA textbook/Rosalind
 
 # Input is a text file where each line corresponds to a set of edges in an adjacency list for a graph
 # 1 -> 2
@@ -15,7 +16,7 @@
 # 3 -> 5
 # 7 -> 6 -> 7
 
-# Usage: python3 3Mstring_reconstruction_from_paired_reads.py input.txt > output.txt
+# Usage: python3 3M_all_max_nonbranching_paths.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
 import sys
@@ -57,12 +58,20 @@ def count_edges(graph):
     return edge_df
 
 
+def is_nonbranching(count_df, node):
+    return (count_df.loc[node, "Edges_in"] == 1) and (count_df.loc[node, "Edges_out"] == 1)
+
+
 def get_isolated_cycle(graph):
+    """
+    graph: adjacency list (as a dict) of the graph
+    returns a list of the isolated cycles in the graph - eg, [7 -> 6 -> 7]
+    """
     all_cycles = []
     count_df = count_edges(graph)
-    count_df["Visited"] = False
+    count_df["Visited"] = False  # init column tracking if node has been visited
     for start_node in graph.keys():
-        if count_df.at[start_node, "Visited"]:
+        if count_df.at[start_node, "Visited"]:  # skip if seen to prevent adding both n1->n2->n1 and n2->n1->n1
             continue
         count_df.at[start_node, "Visited"] = True
         if (count_df.loc[start_node, "Edges_in"] == 1) and (count_df.loc[start_node, "Edges_out"] == 1):
@@ -79,6 +88,10 @@ def get_isolated_cycle(graph):
 
 
 def maximal_nonbranching_paths(graph):
+    """
+    graph: adjacency list (as a dict) of the graph
+    returns a list of the isolated cycles in the graph - eg, [7 -> 6 -> 7]
+     """
     paths = []
     count_df = count_edges(graph)
     for start_node in graph.keys():

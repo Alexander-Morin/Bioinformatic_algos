@@ -400,6 +400,10 @@ def paired_read_string_reconstruction(input_text, k, d):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def is_nonbranching(count_df, node):
+    return (count_df.loc[node, "Edges_in"] == 1) and (count_df.loc[node, "Edges_out"] == 1)
+
+
 def get_isolated_cycle(graph):
     all_cycles = []
     count_df = count_edges(graph)
