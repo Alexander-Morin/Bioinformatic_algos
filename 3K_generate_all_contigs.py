@@ -1,25 +1,24 @@
-# Implementing code to find the all of the maximal non-branching paths of a graph - the longest paths whose intermediate
-# nodes all have in/out degree equal to 1. This is used to assemble contigs in a genome, which are typically required
-# as repeats in genomes make it impossible to find a unique Eulerian path, even with perfect coverage. The strings
-# spelled by these contigs/maximal non branching paths are useful as they will be present in any given assembly with a
-# given kmer composition.
+# Implementing code to find all of the contigs from patterns (a collection of kmers). Contigs are contiguous stretches
+# of DNA in the genome, and are used as a compromise in assembly as repeats in genomes make it impossible to find unique
+# Eulerian paths. Contigs are represented by non-branching paths in the De Bruijn graph of patterns - paths whose
+# intermediate nodes have in and out degrees equal to one. Look to find all max length non-branching paths.
 
-# Problem 3M in the BALA textbook/Rosalind
+# Problem 3K in the BALA textbook/Rosalind
 
-# Input is a text file where each line corresponds to a set of edges in an adjacency list for a graph
-# 1 -> 2
-# 2 -> 3
-# 3 -> 4,5
-# 6 -> 7
-# 7 -> 6
+# Input is a text file where each line corresponds to a kmer in patterns
+# ATG
+# ATG
+# TGT
+# TGG
+# CAT
+# GGA
+# GAT
+# AGA
 
-# Output is the set of maximum non branching paths in the graph
-# 1 -> 2 -> 3
-# 3 -> 4
-# 3 -> 5
-# 7 -> 6 -> 7
+# Output is all contigs in the De Bruijn graph of patterns
+# AGA ATG ATG CAT GAT TGGA TGT
 
-# Usage: python3 3M_all_max_nonbranching_paths.py input.txt > output.txt
+# Usage: python3 3K_generate_all_contigs.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
 
 import sys
@@ -80,6 +79,10 @@ def is_1in1out(count_df, node):
 
 
 def get_contigs(graph):
+    """
+    graph: adjacency list (as a dict) of the graph
+    returns a list of all the contigs in the graph
+    """
     contigs = []
     count_df = count_edges(graph)
     for start_node in graph.keys():
@@ -91,14 +94,13 @@ def get_contigs(graph):
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     contigs.append(nb_path)
-    contigs = [spell_string_by_path(i) for i in contigs]
+    contigs = [spell_string_by_path(i) for i in contigs]  # glue series of nodes into paths
     return contigs
-
 
 
 def main():
     """
-    Read the input file, parse the arguments, and prints all maximal non branching paths
+    Read the input file, parse the arguments, and prints all maximal non branching paths/contigs
     """
     argv = list(sys.argv)
     input_text = []

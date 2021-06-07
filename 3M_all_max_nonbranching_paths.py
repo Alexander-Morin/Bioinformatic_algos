@@ -2,7 +2,8 @@
 # nodes all have in/out degree equal to 1. This is used to assemble contigs in a genome, which are typically required
 # as repeats in genomes make it impossible to find a unique Eulerian path, even with perfect coverage. The strings
 # spelled by these contigs/maximal non branching paths are useful as they will be present in any given assembly with a
-# given kmer composition.
+# given kmer composition. Unlike 3K, which finds all contigs in a given set of nucleotide kmers, this implementation
+# also finds the isolated cycles of a graph (eg, 6 -> 7 -> 6) and expects a set of numeric graph edges as input.
 
 # Problem 3M in the BALA textbook/Rosalind
 

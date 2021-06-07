@@ -394,9 +394,8 @@ def paired_read_string_reconstruction(input_text, k, d):
 # settle for contigs, which can be found from the DBG. A path is non branching if it has node in and out = 1 for
 # intermediate nodes of the path. Want the maximal of such paths: these strings of nucleotides must be present in any
 # given assembly with a given kmer composition. Contigs are strings spelled by the maximal non branching paths in a DBG.
-# Even if you have perfect coverage, rely on contigs because repeats prevent inferring a unique Eulerian path. To find
-# the maximal non branching path, iterate through the non 1 in 1 out nodes and generate all paths, then tack on
-# the isolated cycles in the graph
+# Even if you have perfect coverage, rely on contigs because repeats prevent inferring a unique Eulerian path. Note
+# that the text uses a collection of kmers as the input to the get_contigs problem
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -416,8 +415,15 @@ def get_contigs(graph):
                         next_node = graph[next_node][0]
                         nb_path.append(next_node)
                     contigs.append(nb_path)
-    contigs = [spell_string_by_path(i) for i in contigs]
+    contigs = [spell_string_by_path(i) for i in contigs]  # glue series of nodes into paths
     return contigs
+
+
+# The text notes that this implementation fails to account for self isolated cycles: cycles where the nodes also have
+# in and out degree equal to one (eg, 6 -> 7 -> 6). The following implementation also includes these isolated cycles.
+# Note that unlike the get_contigs problem, whose input is nucleotide kmers, the text phrases this problem as using
+# sets of numeric edges of a graph as input
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 def get_isolated_cycle(graph):
@@ -507,15 +513,3 @@ contig_input = [
     "GAT",
     "AGA"
 ]
-
-
-# print(path_graph(text_input, k=3, d=1))
-# graph = parse_graph(nbp_input)
-# count_df = count_edges(graph)
-graph = debruijn_graph(contig_input)
-print(graph)
-contigs = get_contigs(graph)
-print(contigs)
-tt = [spell_string_by_path(i) for i in contigs]
-# print(spell_edge(contigs[0]))
-print(tt)
