@@ -404,6 +404,22 @@ def is_1in1out(count_df, node):
     return (count_df.loc[node, "Edges_in"] == 1) and (count_df.loc[node, "Edges_out"] == 1)
 
 
+def get_contigs(graph):
+    contigs = []
+    count_df = count_edges(graph)
+    for start_node in graph.keys():
+        if not is_1in1out(count_df, start_node):  # iterate and start from all non 1-in-1-out nodes
+            if count_df.loc[start_node, "Edges_out"] > 0:
+                for next_node in graph[start_node]:
+                    nb_path = [start_node, next_node]
+                    while is_1in1out(count_df, next_node).all():  # all intermediate nodes are 1-in-1-out
+                        next_node = graph[next_node][0]
+                        nb_path.append(next_node)
+                    contigs.append(nb_path)
+    contigs = [spell_string_by_path(i) for i in contigs]
+    return contigs
+
+
 def get_isolated_cycle(graph):
     all_cycles = []
     count_df = count_edges(graph)
@@ -481,8 +497,25 @@ paired_input = [
 
 text_input = "TAATGCCATGGGATGTT"
 
+contig_input = [
+    "ATG",
+    "ATG",
+    "TGT",
+    "TGG",
+    "CAT",
+    "GGA",
+    "GAT",
+    "AGA"
+]
+
+
 # print(path_graph(text_input, k=3, d=1))
-graph = parse_graph(nbp_input)
-count_df = count_edges(graph)
-print(count_df)
-print(is_1in1out(count_df, "1"))
+# graph = parse_graph(nbp_input)
+# count_df = count_edges(graph)
+graph = debruijn_graph(contig_input)
+print(graph)
+contigs = get_contigs(graph)
+print(contigs)
+tt = [spell_string_by_path(i) for i in contigs]
+# print(spell_edge(contigs[0]))
+print(tt)
