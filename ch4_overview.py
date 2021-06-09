@@ -52,11 +52,14 @@ def get_reverse_complement(dna_string):
 def peptide_encoding(dna_string, peptide_string):
     substrings = []
     rev_comp = get_reverse_complement(dna_string)
-    genetic_code = get_genetic_code()
+    genetic_code = get_genetic_code(string_type="DNA")
 
     for i in range(len(dna_string) - 3):
         codon = dna_string[i:i+3]
         acid = genetic_code[codon]
+
+        while acid is peptide_string[]
+
 
 
 
