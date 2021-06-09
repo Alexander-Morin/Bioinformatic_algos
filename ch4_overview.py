@@ -16,14 +16,17 @@ def get_genetic_code(bases="UCAG", acids="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTT
 
 def protein_translation(pattern, genetic_code):
     protein = []
-    for i in range(len(pattern) - 3):
+    for i in range(0, len(pattern), 3):  # step of 3 to represent codon
         codon = pattern[i:i+3]
         acid = genetic_code[codon]
-        if acid is "*":
+        if acid is "*":  # stop codon
             break
         protein.append(acid)
     return protein
 
+
+# Example inputs
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 genetic_code = get_genetic_code()
