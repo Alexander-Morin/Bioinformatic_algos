@@ -15,13 +15,18 @@ import sys
 import fileinput
 
 
-def get_genetic_code(bases="UCAG", acids="FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG"):
+def get_genetic_code(string_type="DNA"):
     """
     returns a dictionary mapping the 64 codons to the 20 amino acids + stop codons
     """
     # https://www.petercollingridge.co.uk/tutorials/bioinformatics/codon-table/
+    if string_type is "RNA":
+        bases = "UCAG"
+    elif string_type is "DNA":
+        bases = "TCAG"
+    amino_acids = "FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG"
     codons = [a + b + c for a in bases for b in bases for c in bases]
-    codon_table = dict(zip(codons, acids))
+    codon_table = dict(zip(codons, amino_acids))
     return codon_table
 
 
@@ -52,7 +57,7 @@ def main():
         if len(line) > 0:
             input_text = line.replace('\n', '')
 
-    code = get_genetic_code()
+    code = get_genetic_code(string_type="RNA")
     output = protein_translation(input_text, code)
     print(output)
 
