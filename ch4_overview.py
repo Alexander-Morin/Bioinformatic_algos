@@ -21,13 +21,13 @@ def get_genetic_code(string_type="DNA"):
 
 def protein_translation(pattern, genetic_code):
     protein = []
-    for i in range(0, len(pattern), 3):  # step of 3 to represent codon
+    for i in range(0, len(pattern) - 3, 3):  # step of 3 to represent codon
         codon = pattern[i:i+3]
         acid = genetic_code[codon]
         if acid is "*":  # stop codon
             break
         protein.append(acid)
-    return protein
+    return "".join(protein)
 
 
 # Next, look at finding which DNA strings encode for a given peptide string. Need to consider all three open reading
@@ -49,16 +49,18 @@ def get_reverse_complement(dna_string):
     return "".join(complement[::-1])
 
 
-def peptide_encoding(dna_string, peptide_string):
+
+def peptide_encoding(dna_string, peptide_string="s"):
     substrings = []
     rev_comp = get_reverse_complement(dna_string)
     genetic_code = get_genetic_code(string_type="DNA")
 
-    for i in range(len(dna_string) - 3):
-        codon = dna_string[i:i+3]
-        acid = genetic_code[codon]
+    frame1 = protein_translation(dna_string, genetic_code)
+    frame2 = protein_translation(dna_string[1:], genetic_code)
+    frame3 = protein_translation(dna_string[2:], genetic_code)
+    rev_frame1 = protein_translation(dna_string, genetic_code)
+    return frame2
 
-        while acid is peptide_string[]
 
 
 
@@ -70,5 +72,5 @@ def peptide_encoding(dna_string, peptide_string):
 
 
 genetic_code = get_genetic_code(string_type="RNA")
-input_text = "AUGGCCAUGGCGCCCAGAACUGAGAUCAAUAGUACCCGUAUUAACGGGUGA"
-print(protein_translation(input_text, genetic_code))
+input_text = "ATGGCCATGGCCCCCAGAACTGAGATCAATAGTACCCGTATTAACGGGTGA"
+print(peptide_encoding(input_text))
