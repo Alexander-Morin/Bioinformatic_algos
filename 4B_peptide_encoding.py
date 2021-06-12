@@ -1,10 +1,15 @@
-# Implementing
+# Implementing code to find which substrings of a DNA string encode a provided peptide.
 
 # Problem 4B in the BALA textbook/Rosalind
 
-# Input
+# Input is a text file where the first line is the DNA string, the second line the peptide string
+# ATGGCCATGGCCCCCAGAACTGAGATCAATAGTACCCGTATTAACGGGTGA
+# MA
 
 # Output
+# ATGGCC
+# GGCCAT
+# ATGGCC
 
 # Usage: python3 4B_peptide_encoding.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
@@ -31,7 +36,7 @@ def get_genetic_code(string_type="DNA"):
 def protein_translation(pattern, genetic_code):
     """
     pattern: an RNA string
-    genetic_code: a dict mapping RNA codons to amino acids/stop codons
+    genetic_code: a dict mapping codons to amino acids/stop codons
     returns the translated protein string
     """
     protein = []
@@ -45,6 +50,10 @@ def protein_translation(pattern, genetic_code):
 
 
 def get_reverse_complement(dna_string):
+    """
+    dna_string: a string of A/C/G/Ts
+    returns the reverse complement of dna string (ACTG -> CAGT)
+    """
     complement = []
     for letter in dna_string:
         if letter == 'A':
@@ -59,11 +68,16 @@ def get_reverse_complement(dna_string):
 
 
 def peptide_encoding(dna_string, peptide_string):
+    """
+    dna_string: a string of A/C/G/Ts
+    peptide_string: a string of the single letter abbreviation of amino acids
+    returns a list of the substrings of dna_string that encode for the provided peptide
+    """
     substrings = []
     rev_comp = get_reverse_complement(dna_string)
     genetic_code = get_genetic_code(string_type="DNA")
 
-    for i in range(len(dna_string) - len(peptide_string) * 3):
+    for i in range(len(dna_string) - len(peptide_string) * 3):  # slide window over bases size of codons in peptide
         sequence = dna_string[i:i+len(peptide_string)*3]
         peptide = protein_translation(sequence, genetic_code)
         rev_sequence = rev_comp[i:i + len(peptide_string) * 3]
@@ -79,7 +93,7 @@ def peptide_encoding(dna_string, peptide_string):
 
 def main():
     """
-    Read the input file, parse the arguments,
+    Read the input file, parse the arguments, find the substrings and print each on its own line
     """
     argv = list(sys.argv)
     input_dna_string = None
@@ -92,8 +106,6 @@ def main():
             else:
                 input_peptide_string = str(line.replace('\n', ''))
 
-
-    code = get_genetic_code(string_type="RNA")
     output = peptide_encoding(input_dna_string, input_peptide_string)
     for sequence in output:
         print(sequence)

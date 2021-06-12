@@ -54,7 +54,7 @@ def peptide_encoding(dna_string, peptide_string):
     rev_comp = get_reverse_complement(dna_string)
     genetic_code = get_genetic_code(string_type="DNA")
 
-    for i in range(len(dna_string) - len(peptide_string) * 3):
+    for i in range(len(dna_string) - len(peptide_string) * 3):  # slide window over bases size of codons in peptide
         sequence = dna_string[i:i+len(peptide_string)*3]
         peptide = protein_translation(sequence, genetic_code)
         rev_sequence = rev_comp[i:i + len(peptide_string) * 3]
@@ -78,6 +78,7 @@ def peptide_encoding(dna_string, peptide_string):
 
 genetic_code = get_genetic_code(string_type="DNA")
 input_text = "ATGGCCATGGCCCCCAGAACTGAGATCAATAGTACCCGTATTAACGGGTGA"
-print(peptide_encoding(input_text, "MA"))
+# print(peptide_encoding(input_text, "MA"))
 # input_text = 'ATGGCC'
 # print(protein_translation(input_text, genetic_code))
+print(get_reverse_complement("ACTG"))
