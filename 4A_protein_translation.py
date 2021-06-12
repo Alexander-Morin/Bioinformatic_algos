@@ -33,7 +33,7 @@ def get_genetic_code(string_type="DNA"):
 def protein_translation(pattern, genetic_code):
     """
     pattern: an RNA string
-    genetic_code: a dict mapping RNA codons to amino acids/stop codons
+    genetic_code: a dict mapping codons to amino acids/stop codons
     returns the translated protein string
     """
     protein = []
