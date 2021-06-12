@@ -68,6 +68,18 @@ def peptide_encoding(dna_string, peptide_string):
     return substrings
 
 
+# However, the text notes that applying this process to find the Tyrocidine B1 substring in the Bacillus brevis genome
+# does not result in an expected 30mer. Goes on to explain that tyrocidines and gramicidins are cyclic peptides - yet
+# if you were to attempt to repeat the process over the 10 linear strings of this cyclic peptide, you would still not
+# find an answer. This is because these proteins are not translated by ribosomes, but instead are made by non ribosomal
+# peptide (RBP) synthetase, which pieces together antibiotic peptides without any reliance on the genetic code. Notes
+# the general usefulness of these NRPs. Therefore sequence these peptides using mass spectrometry. Approximate mass with
+# the integer mass (notes in reality we would be using non-integer masses). Goal is to generate the experimental
+# spectrum of masses after mass spec breaks down the protein. Also make simplifying assumption that the cyclic peptide
+# is broken at every 2 bonds, so the resulting experimental spectrum contains all of the linear fragments of the peptide
+# (called subpeptides). So NQEL -> [N,Q,E,L,NQ,QE,EL,LN,NQE,QEL,ELN,LNQ]. The theoretical spectrum of a peptide would
+# be the collection of masses for all subpeptides, as well as 0, and the full peptide. First, generate linear spectrum
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 
