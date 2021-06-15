@@ -82,6 +82,29 @@ def peptide_encoding(dna_string, peptide_string):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def get_aa_mass():
+    amino_acids = "GASPVTCILNDKQEMHFRYW"
+    mass = [57, 71, 87, 97, 99, 101, 103, 113, 113, 114, 115, 128, 128, 129, 131, 137, 147, 156, 163, 186]
+    mass_dict = dict(zip(amino_acids, mass))
+    return mass_dict
+
+
+def linear_spectrum(peptide, aa_mass):
+    prefix_mass = [0]
+    for i in range(1, len(peptide) + 1):
+        aa = peptide[i-1]
+        mass = prefix_mass[i-1] + aa_mass[aa]
+        prefix_mass.append(mass)
+    linear_spectrum = [0]
+    for i in range(len(peptide) - 1):
+        for j in range(i + 1, len(peptide)):
+            mass = prefix_mass[j] - prefix_mass[i]
+            linear_spectrum.append(mass)
+    # linear_spectrum.sort
+    return linear_spectrum
+    # return prefix_mass
+
+
 
 
 # Example inputs
@@ -89,8 +112,6 @@ def peptide_encoding(dna_string, peptide_string):
 
 
 genetic_code = get_genetic_code(string_type="DNA")
-input_text = "ATGGCCATGGCCCCCAGAACTGAGATCAATAGTACCCGTATTAACGGGTGA"
-# print(peptide_encoding(input_text, "MA"))
-# input_text = 'ATGGCC'
-# print(protein_translation(input_text, genetic_code))
-print(get_reverse_complement("ACTG"))
+aa_mass = get_aa_mass()
+input_text = "NQEL"
+print(linear_spectrum(input_text, aa_mass))
