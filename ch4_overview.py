@@ -90,20 +90,18 @@ def get_aa_mass():
 
 
 def linear_spectrum(peptide, aa_mass):
-    prefix_mass = [0]
-    for i in range(1, len(peptide) + 1):
+    prefix_mass = [0]  # init array of prefix masses with 0
+    for i in range(1, len(peptide) + 1):  # get the prefix masses in increasing order, one aa at a time
         aa = peptide[i-1]
         mass = prefix_mass[i-1] + aa_mass[aa]
         prefix_mass.append(mass)
-    linear_spectrum = [0]
-    for i in range(len(peptide) - 1):
-        for j in range(i + 1, len(peptide)):
+    linear_spectrum = [0]  # init the linear specturm array with 0
+    for i in range(len(peptide)):  # get the mass of every subpeptide
+        for j in range(i+1, len(peptide)+1):
             mass = prefix_mass[j] - prefix_mass[i]
             linear_spectrum.append(mass)
-    # linear_spectrum.sort
+    linear_spectrum.sort()
     return linear_spectrum
-    # return prefix_mass
-
 
 
 
