@@ -77,8 +77,13 @@ def peptide_encoding(dna_string, peptide_string):
 # the integer mass (notes in reality we would be using non-integer masses). Goal is to generate the experimental
 # spectrum of masses after mass spec breaks down the protein. Also make simplifying assumption that the cyclic peptide
 # is broken at every 2 bonds, so the resulting experimental spectrum contains all of the linear fragments of the peptide
-# (called subpeptides). So NQEL -> [N,Q,E,L,NQ,QE,EL,LN,NQE,QEL,ELN,LNQ]. The theoretical spectrum of a peptide would
-# be the collection of masses for all subpeptides, as well as 0, and the full peptide. First, generate linear spectrum
+# (called subpeptides).  The theoretical spectrum of a peptide would be the collection of masses for all subpeptides, as
+# well as 0, and the full peptide. First, generate linear spectrum, which can be found based on the assumption that the
+# mass of any subpeptide can be found by subtracting the masses of two prefixes. generate an array of all prefix masses
+# in increasing order, then the mass of subpeptide beginning at position i + 1 and ending at j can be found by
+# prefix_mass[j] - prefix_mass[i]
+# NQEL subpeptides -> [-, N, Q, E, L, NQ, QE, EL, LN, NQE, QEL, ELN, LNQ, NQEL]
+# NQEL prefixes -> [-, N, NQ, NQE, NQL]
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -104,6 +109,31 @@ def linear_spectrum(peptide, aa_mass):
     return linear_spectrum
 
 
+# The theoretical spectrum of a circular peptide can then be found by finding the linear spectrum, as well as those
+# corresponding to peptides wrapping around the end of the linearized version of peptide. Further, each such subpeptide
+# has mass equal to the difference between mass(peptide) and the subpeptide mass identified by linear spectrum. Eg,
+# for NQEL: mass(LN) = mass(NQEL) - mass(QE)
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def cyclic_spectrum(peptide, aa_mass):
+    prefix_mass = [0]
+    for i in range(1, len(peptide) + 1):
+        aa = peptide[i-1]
+        mass = prefix_mass[i-1] + aa_mass[aa]
+        prefix_mass.append(mass)
+    peptide_mass = prefix_mass[len(prefix_mass)-1]
+    cyclic_spectrum = [0]
+    for i in range(len(peptide)):
+        for j in range(i+1, len(peptide)+1):
+            mass = prefix_mass[j] - prefix_mass[i]
+            cyclic_spectrum.append(mass)
+            if i > 0 and j < len(peptide):
+                cyclic_spectrum.append(peptide_mass - mass)
+    cyclic_spectrum.sort()
+    return cyclic_spectrum
+
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
@@ -111,5 +141,5 @@ def linear_spectrum(peptide, aa_mass):
 
 genetic_code = get_genetic_code(string_type="DNA")
 aa_mass = get_aa_mass()
-input_text = "NQEL"
-print(linear_spectrum(input_text, aa_mass))
+input_text = "LEQN"
+print(cyclic_spectrum(input_text, aa_mass))
