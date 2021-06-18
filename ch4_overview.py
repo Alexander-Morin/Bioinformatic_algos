@@ -109,26 +109,26 @@ def linear_spectrum(peptide, aa_mass):
     return linear_spectrum
 
 
-# The theoretical spectrum of a circular peptide can then be found by finding the linear spectrum, as well as those
-# corresponding to peptides wrapping around the end of the linearized version of peptide. Further, each such subpeptide
+# The theoretical spectrum of a circular peptide can then be found by finding the linear spectrum, as well as
+# the subpeptides wrapping around the end of the linearized version of peptide. Each such subpeptide
 # has mass equal to the difference between mass(peptide) and the subpeptide mass identified by linear spectrum. Eg,
 # for NQEL: mass(LN) = mass(NQEL) - mass(QE)
 # ----------------------------------------------------------------------------------------------------------------------
 
 
 def cyclic_spectrum(peptide, aa_mass):
-    prefix_mass = [0]
-    for i in range(1, len(peptide) + 1):
+    prefix_mass = [0]  # init array of prefix masses with 0
+    for i in range(1, len(peptide) + 1):  # get the prefix masses in increasing order, one aa at a time
         aa = peptide[i-1]
         mass = prefix_mass[i-1] + aa_mass[aa]
         prefix_mass.append(mass)
-    peptide_mass = prefix_mass[len(prefix_mass)-1]
-    cyclic_spectrum = [0]
+    peptide_mass = prefix_mass[len(prefix_mass)-1]  # full peptide mass is the last entry of prefix array
+    cyclic_spectrum = [0]  # init the cyclic spectrum array with 0
     for i in range(len(peptide)):
         for j in range(i+1, len(peptide)+1):
             mass = prefix_mass[j] - prefix_mass[i]
             cyclic_spectrum.append(mass)
-            if i > 0 and j < len(peptide):
+            if i > 0 and j < len(peptide):  # account for subpeptide wrapping back around to beginning
                 cyclic_spectrum.append(peptide_mass - mass)
     cyclic_spectrum.sort()
     return cyclic_spectrum
