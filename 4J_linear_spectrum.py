@@ -1,8 +1,8 @@
 # Implementing code to find the theoretical linear spectrum of a peptide: the integer masses of all linear subpeptides
 # of a peptide, as well as 0 and the full length mass. Relies on the fact that the mass of linear subpeptides can be
 # found by subtracting the masses of two prefixes. Eg,
-# NQEL subpeptides -> [-, N, Q, E, L, NQ, QE, EL, LN, NQE, QEL, ELN, LNQ, NQEL]
-# NQEL prefixes -> [-, N, NQ, NQE, NQL]
+# NQEL subpeptides -> [-, N, Q, E, L, NQ, QE, EL, NQE, QEL, NQEL]
+# NQEL prefixes -> [-, N, NQ, NQE, NQEL]
 
 # Problem 4J in the BALA textbook/Rosalind
 
