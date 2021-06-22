@@ -134,6 +134,39 @@ def cyclic_spectrum(peptide, aa_mass):
     return cyclic_spectrum
 
 
+# However we are trying to solve the inverse problem - given a spectrum, reconstruct the protein. Start by assuming we
+# got lucky and the mass spec generated an ideal spectrum - one that coincides with the peptide's theoretical spectrum.
+# Also note that from now on deal with the masses themselves - redundancies because I/L and K/Q have the same integer
+# mass. Also assume that the largest mass in a spectrum corresponds to the parent mass (full peptide of interest).
+# Can employ a brute force algo for cyclopeptide sequencing, but this is highly impractical:
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def get_peptide_mass(peptide, aa_mass):
+    mass = 0
+    for aa in peptide:
+        mass += aa_mass[aa]
+    return mass
+
+
+def bf_cyclo_seq(spectrum, candidate_peptides, aa_mass):
+    peptides = []
+    for peptide in candidate_peptides:
+        if get_peptide_mass(peptide) == sum(spectrum) and spectrum == cyclic_spectrum(peptide, aa_mass):
+            peptides.append(peptide)
+    return peptides
+
+
+# So turn to branch and bound algorthims: This set of algorithms grows/branches list of candidates then uses a bounding
+# step to remove hopeless candidates. So grow linear peptides that remain consistent with the theoretical spectrum,
+# and if so circularize to see if the cyclical spectrum matches. A linear peptide is consistent if its masses are
+# contained within the theoretical spectrum.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
@@ -142,4 +175,5 @@ def cyclic_spectrum(peptide, aa_mass):
 genetic_code = get_genetic_code(string_type="DNA")
 aa_mass = get_aa_mass()
 input_text = "LEQN"
-print(cyclic_spectrum(input_text, aa_mass))
+# print(cyclic_spectrum(input_text, aa_mass))
+print(get_peptide_mass(input_text, aa_mass))
