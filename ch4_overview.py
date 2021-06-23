@@ -159,9 +159,40 @@ def bf_cyclo_seq(spectrum, candidate_peptides, aa_mass):
 
 # So turn to branch and bound algorthims: This set of algorithms grows/branches list of candidates then uses a bounding
 # step to remove hopeless candidates. So grow linear peptides that remain consistent with the theoretical spectrum,
-# and if so circularize to see if the cyclical spectrum matches. A linear peptide is consistent if its masses are
-# contained within the theoretical spectrum.
+# and if so circularize to see if the cyclical spectrum matches. A linear peptide is consistent with spectrum if every
+# mass in its theoretical spectrum is contained in spectrum. If a mass appears more than once in the theoretical
+# spectrum of a linear peptide, it must appear at least that many times in spectrum.
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def grow_peptide(peptides, aa_mass):
+    if len(peptides) == 0:
+        new_peptides = set(aa_mass.values())
+    else:
+        new_peptides = set()
+        for peptide in peptides:
+            for aa in aa_mass.values():
+                new_peptides.add("-".join([str(peptide), str(aa)]))
+    return new_peptides
+
+
+def get_integer_mass(integer_peptide):
+    mass = [int(x) for x in integer_peptide.split("-")]
+    return sum(mass)
+
+
+def cyclopeptide_sequencing(spectrum, aa_mass):
+    peptides = set("0")
+    parent_mass = sum(spectrum)
+    while peptides:
+        peptides = grow_peptide(peptides, aa_mass)
+        for peptide in peptides:
+            if get_integer_mass(peptide) == parent_mass:
+                if cyclic_spectrum(peptide, aa_mass) == spectrum:
+                    print(peptide)
+                    peptides.remove(peptide)
+            else:
+                peptides.remove(peptide)
 
 
 
@@ -175,5 +206,9 @@ def bf_cyclo_seq(spectrum, candidate_peptides, aa_mass):
 genetic_code = get_genetic_code(string_type="DNA")
 aa_mass = get_aa_mass()
 input_text = "LEQN"
+peptides = ["113-128"]
+# spectrum = ["0"]
 # print(cyclic_spectrum(input_text, aa_mass))
-print(get_peptide_mass(input_text, aa_mass))
+# print(grow_peptide(peptides, aa_mass))
+# print(cyclopeptide_sequencing(spectrum, aa_mass))
+print(get_integer_mass(peptides[0]))
