@@ -83,7 +83,7 @@ def peptide_encoding(dna_string, peptide_string):
 # in increasing order, then the mass of subpeptide beginning at position i + 1 and ending at j can be found by
 # prefix_mass[j] - prefix_mass[i]
 # NQEL subpeptides -> [-, N, Q, E, L, NQ, QE, EL, LN, NQE, QEL, ELN, LNQ, NQEL]
-# NQEL prefixes -> [-, N, NQ, NQE, NQL]
+# NQEL prefixes -> [-, N, NQ, NQE, NQEL]
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -165,45 +165,14 @@ def bf_cyclo_seq(spectrum, candidate_peptides, aa_mass):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def pep_to_mass_str(peptide_str, aa_mass):
-    mass_string = [str(aa_mass[aa]) for aa in peptide_str]
-    return "-".join(mass_string)
-
-
-def get_integer_mass(peptide_int):
-    mass = [int(x) for x in peptide_int.split("-")]
-    return sum(mass)
-
-
-# def grow_peptide(peptides, aa_mass):
-#     if len(peptides) == 0:
-#         new_peptides = set(aa_mass.values())
-#     else:
-#         new_peptides = set()
-#         for peptide in peptides:
-#             for aa in aa_mass.values():
-#                 new_peptides.add("-".join([str(peptide), str(aa)]))
-#     return new_peptides
-
-
-def grow_peptide(peptides, aa_mass):
-    if len(peptides) == 0:
-        new_peptides = list(aa_mass.values())
-    else:
-        new_peptides = list()
-        for peptide in peptides:
-            for aa in aa_mass.values():
-                new_peptides.append("-".join([str(peptide), str(aa)]))
-    return new_peptides
-
-
-def cyclic_spectrum(peptide, aa_mass):
+def cyclic_spectrum_int(peptide_int, aa_mass):
+    peptide = [int(x) for x in peptide_int.split("-")]
     prefix_mass = [0]  # init array of prefix masses with 0
     for i in range(1, len(peptide) + 1):  # get the prefix masses in increasing order, one aa at a time
-        aa = peptide[i-1]
-        mass = prefix_mass[i-1] + aa_mass[aa]
+        aa = int(peptide[i-1])
+        mass = prefix_mass[i-1] + aa
         prefix_mass.append(mass)
-    peptide_mass = prefix_mass[len(prefix_mass)-1]  # full peptide mass is the last entry of prefix array
+    peptide_mass = prefix_mass[-1]  # full peptide mass is the last entry of prefix array
     cyclic_spectrum = [0]  # init the cyclic spectrum array with 0
     for i in range(len(peptide)):
         for j in range(i+1, len(peptide)+1):
@@ -215,19 +184,85 @@ def cyclic_spectrum(peptide, aa_mass):
     return cyclic_spectrum
 
 
+def linear_spectrum_int(peptide_int, aa_mass):
+    peptide = [int(x) for x in peptide_int.split("-")]
+    prefix_mass = [0]  # init array of prefix masses with 0
+    for i in range(1, len(peptide) + 1):  # get the prefix masses in increasing order, one aa at a time
+        aa = int(peptide[i - 1])
+        mass = prefix_mass[i - 1] + aa
+        prefix_mass.append(mass)
+    linear_spectrum = [0]  # init the linear specturm array with 0
+    for i in range(len(peptide)):  # get the mass of every subpeptide
+        for j in range(i+1, len(peptide)+1):
+            mass = prefix_mass[j] - prefix_mass[i]
+            linear_spectrum.append(mass)
+    linear_spectrum.sort()
+    return linear_spectrum
+
+
+
+def pep_to_mass_str(peptide_str, aa_mass):
+    mass_string = [str(aa_mass[aa]) for aa in peptide_str]
+    return "-".join(mass_string)
+
+
+def get_integer_mass(peptide_int):
+    mass = [int(x) for x in peptide_int.split("-")]
+    return sum(mass)
+
+# set
+def grow_peptide(peptides, aa_mass):
+    if len(peptides) == 0:
+        new_peptides = set(aa_mass.values())
+    else:
+        new_peptides = set()
+        for peptide in peptides:
+            for aa in aa_mass.values():
+                new_peptides.add("-".join([str(peptide), str(aa)]))
+    return new_peptides
+
+
+# list
+# def grow_peptide(peptides, aa_mass):
+#     if peptides[0] == "0":
+#         new_peptides = [str(x) for x in aa_mass.values()]
+#     else:
+#         new_peptides = list()
+#         for peptide in peptides:
+#             for aa in aa_mass.values():
+#                 new_peptides.append("-".join([str(peptide), str(aa)]))
+#     return new_peptides
+
+
+def is_peptide_consistent(peptide_int, spectrum, aa_mass):
+    peptide_spectrum = linear_spectrum_int(peptide_int, aa_mass)
+    spectrum_cp = spectrum.copy()
+    for mass in peptide_spectrum.copy():
+        if mass in spectrum_cp:
+            peptide_spectrum.remove(mass)
+            spectrum_cp.remove(mass)
+    return len(peptide_spectrum) == 0
+
+
 def cyclopeptide_sequencing(spectrum, aa_mass):
-    peptides = ["0"]
-    parent_mass = sum(spectrum)
+    output_peptide = set()
+    peptides = set(spectrum).intersection(set(aa_mass.values()))
+    parent_mass = spectrum[-1]
     while peptides:
         peptides = grow_peptide(peptides, aa_mass)
-        print(peptides)
-        for peptide in peptides:
-            print(peptide, get_integer_mass(peptide))
+        for peptide in peptides.copy():
             if get_integer_mass(peptide) == parent_mass:
-                if cyclic_spectrum(peptide, aa_mass) == spectrum:
+                if cyclic_spectrum_int(peptide, aa_mass) == spectrum:
+                    output_peptide.add(peptide)
                     peptides.remove(peptide)
-            else:
+            elif is_peptide_consistent(peptide, spectrum, aa_mass) is False:
                 peptides.remove(peptide)
+    return output_peptide
+
+
+
+
+
 
 
 # Example inputs
@@ -236,11 +271,17 @@ def cyclopeptide_sequencing(spectrum, aa_mass):
 
 # genetic_code = get_genetic_code(string_type="DNA")
 aa_mass = get_aa_mass()
-# input_text = "LEQN"
-peptides = ["113-128"]
+# spectrum = [0, 97, 97, 99, 101, 103, 196, 198, 198, 200, 202, 295, 297, 299, 299, 301, 394, 396, 398, 400, 400, 497]
 spectrum = [0, 113, 128, 186, 241, 299, 314, 427]
-# print(cyclic_spectrum(input_text, aa_mass))
-print(cyclic_spectrum(pep_to_mass_str(peptides, aa_mass), aa_mass))
-# print(grow_peptide(peptides, aa_mass))
-# print(cyclopeptide_sequencing(spectrum, aa_mass))
-# print(get_integer_mass(peptides[0]))
+print(cyclopeptide_sequencing(spectrum, aa_mass))
+
+# peptides = ["101", "101-97", "101-97-103", "101-97-103-99", "101-97-103-99-97"]
+# for peptide in peptides:
+#     print(linear_spectrum_int(peptide, aa_mass))
+#     print(is_peptide_consistent(peptide, spectrum, aa_mass))
+
+
+# peptide1 = "99-128-147"  # VKF
+# peptide2 = "99-128-163"  # VKY
+# print(linear_spectrum_int(peptide1, aa_mass))
+# print(linear_spectrum_int(peptide2, aa_mass))
