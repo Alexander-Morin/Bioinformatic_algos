@@ -138,8 +138,13 @@ def cyclic_spectrum(peptide, aa_mass):
 # got lucky and the mass spec generated an ideal spectrum - one that coincides with the peptide's theoretical spectrum.
 # Also note that from now on deal with the masses themselves - redundancies because I/L and K/Q have the same integer
 # mass. Also assume that the largest mass in a spectrum corresponds to the parent mass (full peptide of interest).
-# Can employ a brute force algo for cyclopeptide sequencing, but this is highly impractical:
+# Can employ a brute force algo for cyclopeptide sequencing that tests every peptide, but this is highly impractical:
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+def pep_to_mass_str(peptide_str, aa_mass):
+    mass_string = [str(aa_mass[aa]) for aa in peptide_str]
+    return "-".join(mass_string)
 
 
 def get_peptide_mass(peptide, aa_mass):
@@ -158,7 +163,7 @@ def bf_cyclo_seq(spectrum, candidate_peptides, aa_mass):
 
 
 # So turn to branch and bound algorthims: This set of algorithms grows/branches list of candidates then uses a bounding
-# step to remove hopeless candidates. So grow linear peptides that remain consistent with the theoretical spectrum,
+# step to remove hopeless candidates. Grow linear peptides that remain consistent with the theoretical spectrum,
 # and if so circularize to see if the cyclical spectrum matches. A linear peptide is consistent with spectrum if every
 # mass in its theoretical spectrum is contained in spectrum. If a mass appears more than once in the theoretical
 # spectrum of a linear peptide, it must appear at least that many times in spectrum.
@@ -200,17 +205,11 @@ def linear_spectrum_int(peptide_int, aa_mass):
     return linear_spectrum
 
 
-
-def pep_to_mass_str(peptide_str, aa_mass):
-    mass_string = [str(aa_mass[aa]) for aa in peptide_str]
-    return "-".join(mass_string)
-
-
 def get_integer_mass(peptide_int):
     mass = [int(x) for x in peptide_int.split("-")]
     return sum(mass)
 
-# set
+
 def grow_peptide(peptides, aa_mass):
     if len(peptides) == 0:
         new_peptides = set(aa_mass.values())
@@ -220,18 +219,6 @@ def grow_peptide(peptides, aa_mass):
             for aa in aa_mass.values():
                 new_peptides.add("-".join([str(peptide), str(aa)]))
     return new_peptides
-
-
-# list
-# def grow_peptide(peptides, aa_mass):
-#     if peptides[0] == "0":
-#         new_peptides = [str(x) for x in aa_mass.values()]
-#     else:
-#         new_peptides = list()
-#         for peptide in peptides:
-#             for aa in aa_mass.values():
-#                 new_peptides.append("-".join([str(peptide), str(aa)]))
-#     return new_peptides
 
 
 def is_peptide_consistent(peptide_int, spectrum, aa_mass):
@@ -246,19 +233,18 @@ def is_peptide_consistent(peptide_int, spectrum, aa_mass):
 
 def cyclopeptide_sequencing(spectrum, aa_mass):
     output_peptide = set()
-    peptides = set(spectrum).intersection(set(aa_mass.values()))
-    parent_mass = spectrum[-1]
+    peptides = set(spectrum).intersection(set(aa_mass.values()))  # init with aa in spectrum
+    parent_mass = max(spectrum)
     while peptides:
-        peptides = grow_peptide(peptides, aa_mass)
+        peptides = grow_peptide(peptides, aa_mass)  # branch step
         for peptide in peptides.copy():
             if get_integer_mass(peptide) == parent_mass:
                 if cyclic_spectrum_int(peptide, aa_mass) == spectrum:
                     output_peptide.add(peptide)
                     peptides.remove(peptide)
-            elif is_peptide_consistent(peptide, spectrum, aa_mass) is False:
+            elif not is_peptide_consistent(peptide, spectrum, aa_mass):  # bound step
                 peptides.remove(peptide)
     return output_peptide
-
 
 
 
