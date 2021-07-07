@@ -247,6 +247,28 @@ def cyclopeptide_sequencing(spectrum, aa_mass):
     return output_peptide
 
 
+# The brute force implementation is exponential, and while the branch and bound version is practically much faster,
+# it can generate many incorrect intermediate kmers and no one has been able to prove that it is polynomial, so from a
+# theoretical perspective it is just as slow. Further, cyclopeptide_sequencing assumes that the experimental spectrum
+# perfectly matches the theoretical spectrum, which is not realistic - mass spec produces false and missing masses. ANY
+# false/missing masses will cause this algo to throw away the correct peptide because the theoretical spectrum differs
+# from the experimental. To account for this noisiness, employ a scoring function to count matching masses.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def cyclopeptide_scoring(peptide, spectrum, aa_mass):
+    score = 0
+    peptide_spectrum = cyclic_spectrum(peptide, aa_mass)
+    # spectrum_cp = spectrum.copy()
+    for mass in peptide_spectrum.copy():
+        # if mass in spectrum_cp:
+        if mass in spectrum:
+            score += 1
+            # peptside_spectrum.remove(mass)
+            # spectrum_cp.remove(mass)
+            spectrum.remove(mass)
+    return score
+
 
 
 
@@ -257,17 +279,11 @@ def cyclopeptide_sequencing(spectrum, aa_mass):
 
 # genetic_code = get_genetic_code(string_type="DNA")
 aa_mass = get_aa_mass()
+
 # spectrum = [0, 97, 97, 99, 101, 103, 196, 198, 198, 200, 202, 295, 297, 299, 299, 301, 394, 396, 398, 400, 400, 497]
-spectrum = [0, 113, 128, 186, 241, 299, 314, 427]
-print(cyclopeptide_sequencing(spectrum, aa_mass))
+# spectrum = [0, 113, 128, 186, 241, 299, 314, 427]
+# print(cyclopeptide_sequencing(spectrum, aa_mass))
 
-# peptides = ["101", "101-97", "101-97-103", "101-97-103-99", "101-97-103-99-97"]
-# for peptide in peptides:
-#     print(linear_spectrum_int(peptide, aa_mass))
-#     print(is_peptide_consistent(peptide, spectrum, aa_mass))
-
-
-# peptide1 = "99-128-147"  # VKF
-# peptide2 = "99-128-163"  # VKY
-# print(linear_spectrum_int(peptide1, aa_mass))
-# print(linear_spectrum_int(peptide2, aa_mass))
+peptide = "NQEL"
+spectrum = [0, 99, 113, 114, 128, 227, 257, 299, 355, 356, 370, 371, 484]
+print(cyclopeptide_scoring(peptide, spectrum, aa_mass))
