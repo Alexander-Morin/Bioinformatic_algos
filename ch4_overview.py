@@ -259,17 +259,27 @@ def cyclopeptide_sequencing(spectrum, aa_mass):
 def cyclopeptide_scoring(peptide, spectrum, aa_mass):
     score = 0
     peptide_spectrum = cyclic_spectrum(peptide, aa_mass)
-    # spectrum_cp = spectrum.copy()
-    for mass in peptide_spectrum.copy():
-        # if mass in spectrum_cp:
+    for mass in peptide_spectrum:
         if mass in spectrum:
             score += 1
-            # peptside_spectrum.remove(mass)
-            # spectrum_cp.remove(mass)
             spectrum.remove(mass)
     return score
 
 
+# The goal is to then adapt cyclopeptide sequencing to find the peptide with the highest score - must revise the bound
+# step to include more linear candidates (account for potential misses/false masses), while eliminating those with
+# insufficiently high score. Note that must calculate the score of the linear spectrum, not the cyclic.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def linear_peptide_score(peptide, spectrum, aa_mass):
+    score = 0
+    peptide_spectrum = linear_spectrum(peptide, aa_mass)
+    for mass in peptide_spectrum:
+        if mass in spectrum:
+            score += 1
+            spectrum.remove(mass)
+    return score
 
 
 
@@ -286,4 +296,5 @@ aa_mass = get_aa_mass()
 
 peptide = "NQEL"
 spectrum = [0, 99, 113, 114, 128, 227, 257, 299, 355, 356, 370, 371, 484]
-print(cyclopeptide_scoring(peptide, spectrum, aa_mass))
+# print(cyclopeptide_scoring(peptide, spectrum, aa_mass))
+print(linear_peptide_score(peptide, spectrum, aa_mass))
