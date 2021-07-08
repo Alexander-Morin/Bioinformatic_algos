@@ -268,7 +268,8 @@ def cyclopeptide_scoring(peptide, spectrum, aa_mass):
 
 # The goal is to then adapt cyclopeptide sequencing to find the peptide with the highest score - must revise the bound
 # step to include more linear candidates (account for potential misses/false masses), while eliminating those with
-# insufficiently high score. Note that must calculate the score of the linear spectrum, not the cyclic.
+# insufficiently high score. Note that must calculate the score of the linear spectrum, not the cyclic. Then employ
+# a trim function to retain the top N scoring peptides (while allowing ties)
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -280,6 +281,18 @@ def linear_peptide_score(peptide, spectrum, aa_mass):
             score += 1
             spectrum.remove(mass)
     return score
+
+
+def trim(leaderboard, spectrum, n, aa_mass):
+    score_df = pd.DataFrame(
+        {"Score": [linear_peptide_score(peptide, spectrum, aa_mass) for peptide in leaderboard]},
+        index=leaderboard)
+    score_df = score_df.sort_values("Score", ascending=False)
+    for i in range(len(score_df)):
+       print(score_df.iloc[i] < score_df.iloc[n])
+
+
+    return score_df
 
 
 
@@ -294,7 +307,14 @@ aa_mass = get_aa_mass()
 # spectrum = [0, 113, 128, 186, 241, 299, 314, 427]
 # print(cyclopeptide_sequencing(spectrum, aa_mass))
 
-peptide = "NQEL"
-spectrum = [0, 99, 113, 114, 128, 227, 257, 299, 355, 356, 370, 371, 484]
+# peptide = "NQEL"
+# spectrum = [0, 99, 113, 114, 128, 227, 257, 299, 355, 356, 370, 371, 484]
 # print(cyclopeptide_scoring(peptide, spectrum, aa_mass))
-print(linear_peptide_score(peptide, spectrum, aa_mass))
+# print(linear_peptide_score(peptide, spectrum, aa_mass))
+
+leaderboard = ["LAST", "ALST", "TLLT", "TQAS"]
+spectrum = [0, 71, 87, 101, 113, 158, 184, 188, 259, 271, 372]
+top_n = 2
+# tt = trim(leaderboard, spectrum, top_n, aa_mass)
+# print(bool(tt.iloc[top_n] < tt.iloc[0]))
+print(trim(leaderboard, spectrum, top_n, aa_mass))
