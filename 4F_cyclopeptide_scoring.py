@@ -68,11 +68,12 @@ def cyclopeptide_scoring(peptide, spectrum, aa_mass):
     returns an integer score of how many masses in the cyclic spectrum of peptide are contained in the input spectrum
     """
     score = 0
+    spectrum_cp = spectrum.copy()
     peptide_spectrum = cyclic_spectrum(peptide, aa_mass)
     for mass in peptide_spectrum:
-        if mass in spectrum:
+        if mass in spectrum_cp:
             score += 1
-            spectrum.remove(mass)
+            spectrum_cp.remove(mass)
     return score
 
 
