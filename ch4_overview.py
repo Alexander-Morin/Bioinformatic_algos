@@ -258,11 +258,12 @@ def cyclopeptide_sequencing(spectrum, aa_mass):
 
 def cyclopeptide_scoring(peptide, spectrum, aa_mass):
     score = 0
+    spectrum_cp = spectrum.copy()
     peptide_spectrum = cyclic_spectrum(peptide, aa_mass)
     for mass in peptide_spectrum:
-        if mass in spectrum:
+        if mass in spectrum_cp:
             score += 1
-            spectrum.remove(mass)
+            spectrum_cp.remove(mass)
     return score
 
 
@@ -275,24 +276,22 @@ def cyclopeptide_scoring(peptide, spectrum, aa_mass):
 
 def linear_peptide_score(peptide, spectrum, aa_mass):
     score = 0
+    spectrum_cp = spectrum.copy()
     peptide_spectrum = linear_spectrum(peptide, aa_mass)
     for mass in peptide_spectrum:
-        if mass in spectrum:
+        if mass in spectrum_cp:
             score += 1
-            spectrum.remove(mass)
+            spectrum_cp.remove(mass)
     return score
 
 
 def trim(leaderboard, spectrum, n, aa_mass):
-    score_df = pd.DataFrame(
-        {"Score": [linear_peptide_score(peptide, spectrum, aa_mass) for peptide in leaderboard]},
-        index=leaderboard)
+    scores = [linear_peptide_score(peptide, spectrum, aa_mass) for peptide in leaderboard]
+    score_df = pd.DataFrame({"Score": scores}, index=leaderboard)
     score_df = score_df.sort_values("Score", ascending=False)
-    for i in range(len(score_df)):
-       print(score_df.iloc[i] < score_df.iloc[n])
-
-
-    return score_df
+    n_score = score_df["Score"].iloc[n]  # the score of the nth element to keep
+    leading_peptides = score_df.index[score_df["Score"] >= n_score]
+    return leading_peptides.tolist()
 
 
 
@@ -318,3 +317,4 @@ top_n = 2
 # tt = trim(leaderboard, spectrum, top_n, aa_mass)
 # print(bool(tt.iloc[top_n] < tt.iloc[0]))
 print(trim(leaderboard, spectrum, top_n, aa_mass))
+# [print(linear_peptide_score(peptide, spectrum, aa_mass)) for peptide in leaderboard]

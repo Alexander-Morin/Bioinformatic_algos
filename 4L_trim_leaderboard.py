@@ -1,14 +1,18 @@
-# Implementing XX
+# Implementing code to select the highest scoring peptides whose linear spectrums most closely align with a given
+# experimental spectrum. This is used for a branch and bound approach for cyclopeptide sequencing - it is expected that
+# mass spec will result in false or missing masses. Therefore, use a scoring function to determine how close candidate
+# theoretical peptides are to the given spectrum, only taking n candidates.
 
 # Problem 4L in the BALA textbook/Rosalind
 
-# Input is XX
-# XX
-# XX
-# XX
+# Input is a text file where the first line is the leaderboard of peptides, the second line is the experimental
+# spectrum, and the third line is n, the number of top candidates to keep
+# LAST ALST TLLT TQAS
+# 0 71 87 101 113 158 184 188 259 271 372
+# 2
 
-# Output is XX
-# XX
+# Output is the top n candidates to keep
+# LAST ALST
 
 # Usage: python3 4L_trim_leaderboard.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
@@ -61,27 +65,33 @@ def linear_peptide_score(peptide, spectrum, aa_mass):
     returns an integer score of how many masses in the linear spectrum of peptide are contained in the input spectrum
     """
     score = 0
+    spectrum_cp = spectrum.copy()
     peptide_spectrum = linear_spectrum(peptide, aa_mass)
     for mass in peptide_spectrum:
-        if mass in spectrum:
+        if mass in spectrum_cp:
             score += 1
-            spectrum.remove(mass)
+            spectrum_cp.remove(mass)
     return score
 
 
 def trim(leaderboard, spectrum, n, aa_mass):
-    score_df = pd.DataFrame(
-        {"Score": [linear_peptide_score(peptide, spectrum.copy(), aa_mass) for peptide in leaderboard]},
-        index=leaderboard)
+    """
+    leaderboard: a list of candidate peptides
+    spectrum: a list of peptide inter masses
+    aa_mass: dict mapping amino acids to their integer masses
+    returns a list of the top n peptides
+    """
+    scores = [linear_peptide_score(peptide, spectrum, aa_mass) for peptide in leaderboard]
+    score_df = pd.DataFrame({"Score": scores}, index=leaderboard)
     score_df = score_df.sort_values("Score", ascending=False)
-    n_score = score_df["Score"].iloc[n]
+    n_score = score_df["Score"].iloc[n]  # the score of the nth element to keep
     leading_peptides = score_df.index[score_df["Score"] >= n_score]
     return leading_peptides.tolist()
-    # return score_df
+
 
 def main():
     """
-    Read the input file, parse the arguments, and returns the linear peptide score
+    Read the input file, parse the arguments, and returns top n peptides
     """
     argv = list(sys.argv)
     input_leaderboard = None
@@ -99,11 +109,10 @@ def main():
 
     aa_mass = get_aa_mass()
     input_spectrum = [int(x) for x in input_spectrum.split(" ")]
-    # print(trim(input_leaderboard, input_spectrum, input_topn, aa_mass))
-    tt = trim(input_leaderboard, input_spectrum, input_topn, aa_mass)
-    # print(tt)
-    for t in tt:
-        print(t, end=" ")
+    top_peptides = trim(input_leaderboard, input_spectrum, input_topn, aa_mass)
+
+    for peptide in top_peptides:
+        print(peptide, end=" ")
 
 
 if __name__ == "__main__":
