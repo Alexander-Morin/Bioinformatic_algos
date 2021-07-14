@@ -294,6 +294,32 @@ def trim(leaderboard, spectrum, n, aa_mass):
     return leading_peptides.tolist()
 
 
+# Text uses string text for peptides when talking about scoring, then switches to int for the actual seq. Annoying.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
+    output_peptide = set()
+    leaderboard = set(spectrum).intersection(set(aa_mass.values()))  # init with aa in spectrum
+    hi_score = 0
+    parent_mass = max(spectrum)
+    while leaderboard:
+        leaderboard = grow_peptide(leaderboard, aa_mass)  # branch step
+        for peptide in leaderboard.copy():
+            if get_integer_mass(peptide) == parent_mass:
+                peptide_score = linear_peptide_score(peptide, spectrum, aa_mass)
+                print(peptide_score)
+    #             if peptide_score > hi_score:
+    #                 output_peptide.add(peptide)
+    #                 hi_score = peptide_score
+    #         elif get_integer_mass(peptide) > parent_mass:
+    #             leaderboard.remove(peptide)
+    #     leaderboard = trim(leaderboard, spectrum, n, aa_mass)
+    return output_peptide
+
+
+
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
@@ -311,10 +337,10 @@ aa_mass = get_aa_mass()
 # print(cyclopeptide_scoring(peptide, spectrum, aa_mass))
 # print(linear_peptide_score(peptide, spectrum, aa_mass))
 
-leaderboard = ["LAST", "ALST", "TLLT", "TQAS"]
-spectrum = [0, 71, 87, 101, 113, 158, 184, 188, 259, 271, 372]
-top_n = 2
-# tt = trim(leaderboard, spectrum, top_n, aa_mass)
-# print(bool(tt.iloc[top_n] < tt.iloc[0]))
-print(trim(leaderboard, spectrum, top_n, aa_mass))
-# [print(linear_peptide_score(peptide, spectrum, aa_mass)) for peptide in leaderboard]
+# leaderboard = ["LAST", "ALST", "TLLT", "TQAS"]
+# spectrum = [0, 71, 87, 101, 113, 158, 184, 188, 259, 271, 372]
+# top_n = 2
+
+top_n = 10
+spectrum = [0, 71, 113, 129, 147, 200, 218, 260, 313, 331, 347, 389, 460]
+print(leaderboard_cyclopeptide_seq(spectrum, top_n, aa_mass))
