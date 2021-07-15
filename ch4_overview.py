@@ -298,6 +298,26 @@ def trim(leaderboard, spectrum, n, aa_mass):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def linear_peptide_score_int(peptide_int, spectrum, aa_mass):
+    score = 0
+    spectrum_cp = spectrum.copy()
+    peptide_spectrum = linear_spectrum_int(peptide_int, aa_mass)
+    for mass in peptide_spectrum:
+        if mass in spectrum_cp:
+            score += 1
+            spectrum_cp.remove(mass)
+    return score
+
+
+def trim_int(leaderboard, spectrum, n, aa_mass):
+    scores = [linear_peptide_score_int(peptide, spectrum, aa_mass) for peptide in leaderboard]
+    score_df = pd.DataFrame({"Score": scores}, index=leaderboard)
+    score_df = score_df.sort_values("Score", ascending=False)
+    n_score = score_df["Score"].iloc[n]  # the score of the nth element to keep
+    leading_peptides = score_df.index[score_df["Score"] >= n_score]
+    return leading_peptides.tolist()
+
+
 def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
     output_peptide = set()
     leaderboard = set(spectrum).intersection(set(aa_mass.values()))  # init with aa in spectrum
@@ -307,14 +327,14 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
         leaderboard = grow_peptide(leaderboard, aa_mass)  # branch step
         for peptide in leaderboard.copy():
             if get_integer_mass(peptide) == parent_mass:
-                peptide_score = linear_peptide_score(peptide, spectrum, aa_mass)
-                print(peptide_score)
-    #             if peptide_score > hi_score:
-    #                 output_peptide.add(peptide)
-    #                 hi_score = peptide_score
-    #         elif get_integer_mass(peptide) > parent_mass:
-    #             leaderboard.remove(peptide)
-    #     leaderboard = trim(leaderboard, spectrum, n, aa_mass)
+                peptide_score = linear_peptide_score_int(peptide, spectrum, aa_mass)
+                if peptide_score > hi_score:
+                    output_peptide.add(peptide)
+                    hi_score = peptide_score
+            elif get_integer_mass(peptide) > parent_mass:
+                leaderboard.remove(peptide)
+        if len(leaderboard) > 0:
+            trim_int(leaderboard, spectrum, n, aa_mass)
     return output_peptide
 
 
@@ -343,4 +363,9 @@ aa_mass = get_aa_mass()
 
 top_n = 10
 spectrum = [0, 71, 113, 129, 147, 200, 218, 260, 313, 331, 347, 389, 460]
+# peptide_int = "113-147-71-129"
+# leaderboard_int = [pep_to_mass_str(peptide, aa_mass) for peptide in leaderboard]
+# print(trim_int(leaderboard_int, spectrum, top_n, aa_mass))
+# print(trim(leaderboard, spectrum, top_n, aa_mass))
+# print(linear_peptide_score_int(peptide_int, spectrum, aa_mass))
 print(leaderboard_cyclopeptide_seq(spectrum, top_n, aa_mass))
