@@ -78,6 +78,7 @@ def trim(leaderboard, spectrum, n, aa_mass):
     """
     leaderboard: a list of candidate peptides
     spectrum: a list of peptide inter masses
+    n: an int corresponding to how many top elements to keep
     aa_mass: dict mapping amino acids to their integer masses
     returns a list of the top n peptides
     """
