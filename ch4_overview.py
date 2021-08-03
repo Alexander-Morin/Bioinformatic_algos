@@ -310,32 +310,36 @@ def linear_peptide_score_int(peptide_int, spectrum, aa_mass):
 
 
 def trim_int(leaderboard, spectrum, n, aa_mass):
+    n = min(n, len(leaderboard))
+    leaderboard = list(leaderboard)
     scores = [linear_peptide_score_int(peptide, spectrum, aa_mass) for peptide in leaderboard]
-    score_df = pd.DataFrame({"Score": scores}, index=leaderboard)
-    score_df = score_df.sort_values("Score", ascending=False)
-    n_score = score_df["Score"].iloc[n]  # the score of the nth element to keep
-    leading_peptides = score_df.index[score_df["Score"] >= n_score]
-    return leading_peptides.tolist()
+    sorted_ix = np.argsort(scores)[::-1]
+    sorted_scores = [scores[ix] for ix in sorted_ix]
+    sorted_peptides = [leaderboard[ix] for ix in sorted_ix]
+    score_threshold = sorted_scores[n-1]
+    for i in range(n, len(leaderboard)):
+        if sorted_scores[i] < score_threshold:
+            return sorted_peptides[:i]
+    return sorted_peptides
 
 
 def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
-    output_peptide = set()
     leaderboard = set(spectrum).intersection(set(aa_mass.values()))  # init with aa in spectrum
-    hi_score = 0
+    lead_peptide, hi_score = "", 0
     parent_mass = max(spectrum)
     while leaderboard:
         leaderboard = grow_peptide(leaderboard, aa_mass)  # branch step
         for peptide in leaderboard.copy():
             if get_integer_mass(peptide) == parent_mass:
-                peptide_score = linear_peptide_score_int(peptide, spectrum, aa_mass)
+                peptide_score = cyclopeptide_scoring(peptide, spectrum, aa_mass)
                 if peptide_score > hi_score:
-                    output_peptide.add(peptide)
+                    lead_peptide = peptide
                     hi_score = peptide_score
             elif get_integer_mass(peptide) > parent_mass:
                 leaderboard.remove(peptide)
-        if len(leaderboard) > 0:
-            trim_int(leaderboard, spectrum, n, aa_mass)
-    return output_peptide
+        if len(leaderboard) > 0:   # bound step
+            leaderboard = trim_int(leaderboard, spectrum, n, aa_mass)
+    return lead_peptide
 
 
 
