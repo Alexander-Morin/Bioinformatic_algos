@@ -1,7 +1,9 @@
 # This chapter explores translation/encoding proteins, motivated by antibiotics discovery
 
 import pandas as pd
-
+import numpy as np
+from collections import Counter
+from itertools import repeat, chain
 
 # Text begins by motivating how Bacillus brevis creates/encodes the antibiotic Tyrocidine B1, which is 10 aa long
 # ----------------------------------------------------------------------------------------------------------------------
@@ -342,6 +344,26 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
     return lead_peptide
 
 
+# Notes that the leaderboard sequencing is a heuristic that will degrade in performance when the number of errors 
+# (missing or false masses) increases. A futher wrinkle is that in reality, there are more than 20 of the proteinogenic
+# amino acids (Selenocystein and Pyrrolysine bring it to 22), and NRPs can incorporate non-proteinogenic acids which 
+# further increases chance that leaderboard incorporates an incorrect peptide with a similar weight. To get around this,
+# only want to consider the relevant amino acids of a spectrum. Find the convolution of a spectrum: the positive 
+# differences in masses of all subpeptides. If experimental contains NQE and NQ, you get mass of E even if it wasn't
+# in the experimental spectrum. Sort the counts of occurrences of these masses to get the likely amino acids.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def spectral_convolution(spectrum):
+    conv = []
+    for i in range(0, len(spectrum)):
+        for j in range(0, len(spectrum)):
+            if i == j:
+                next
+            elif spectrum[j] - spectrum[i] > 0:
+                conv.append(spectrum[j] - spectrum[i])
+    return conv
+        
 
 
 
@@ -365,11 +387,17 @@ aa_mass = get_aa_mass()
 # spectrum = [0, 71, 87, 101, 113, 158, 184, 188, 259, 271, 372]
 # top_n = 2
 
-top_n = 10
-spectrum = [0, 71, 113, 129, 147, 200, 218, 260, 313, 331, 347, 389, 460]
+# top_n = 10
+# spectrum = [0, 71, 113, 129, 147, 200, 218, 260, 313, 331, 347, 389, 460]
 # peptide_int = "113-147-71-129"
 # leaderboard_int = [pep_to_mass_str(peptide, aa_mass) for peptide in leaderboard]
 # print(trim_int(leaderboard_int, spectrum, top_n, aa_mass))
 # print(trim(leaderboard, spectrum, top_n, aa_mass))
 # print(linear_peptide_score_int(peptide_int, spectrum, aa_mass))
-print(leaderboard_cyclopeptide_seq(spectrum, top_n, aa_mass))
+# print(leaderboard_cyclopeptide_seq(spectrum, top_n, aa_mass))
+
+spectrum = [0, 137, 186, 323]
+output = spectral_convolution(spectrum)
+print(output) 
+output = list(chain.from_iterable(repeat(i, c) for i,c in Counter(output).most_common()))
+print(output)
