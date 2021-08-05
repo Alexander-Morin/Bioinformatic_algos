@@ -3,7 +3,6 @@
 import pandas as pd
 import numpy as np
 from collections import Counter
-from itertools import repeat, chain
 
 # Text begins by motivating how Bacillus brevis creates/encodes the antibiotic Tyrocidine B1, which is 10 aa long
 # ----------------------------------------------------------------------------------------------------------------------
@@ -362,6 +361,7 @@ def spectral_convolution(spectrum):
                 next
             elif spectrum[j] - spectrum[i] > 0:
                 conv.append(spectrum[j] - spectrum[i])
+    conv = sorted(conv, key=Counter(conv).get, reverse=True)
     return conv
         
 
