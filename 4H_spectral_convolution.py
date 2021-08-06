@@ -14,6 +14,7 @@
 import sys
 import fileinput
 from collections import Counter
+from itertools import repeat, chain
 
 
 def spectral_convolution(spectrum):
@@ -28,7 +29,7 @@ def spectral_convolution(spectrum):
                 next
             elif spectrum[j] - spectrum[i] > 0:
                 conv.append(spectrum[j] - spectrum[i])
-    conv = sorted(conv, key=Counter(conv).get, reverse=True)
+    conv = list(chain.from_iterable(repeat(i, c) for i, c in Counter(conv).most_common()))
     return conv
 
 
