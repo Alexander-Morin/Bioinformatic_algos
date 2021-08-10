@@ -269,6 +269,17 @@ def cyclopeptide_scoring(peptide, spectrum, aa_mass):
     return score
 
 
+def cyclopeptide_scoring_int(peptide_int, spectrum, aa_mass):
+    score = 0
+    spectrum_cp = spectrum.copy()
+    peptide_spectrum = cyclic_spectrum_int(peptide_int, aa_mass)
+    for mass in peptide_spectrum:
+        if mass in spectrum_cp:
+            score += 1
+            spectrum_cp.remove(mass)
+    return score
+
+
 # The goal is to then adapt cyclopeptide sequencing to find the peptide with the highest score - must revise the bound
 # step to include more linear candidates (account for potential misses/false masses), while eliminating those with
 # insufficiently high score. Note that must calculate the score of the linear spectrum, not the cyclic. Then employ
@@ -333,7 +344,7 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
         leaderboard = grow_peptide(leaderboard, aa_mass)  # branch step
         for peptide in leaderboard.copy():
             if get_integer_mass(peptide) == parent_mass:
-                peptide_score = cyclopeptide_scoring(peptide, spectrum, aa_mass)
+                peptide_score = cyclopeptide_scoring_int(peptide, spectrum, aa_mass)
                 if peptide_score > hi_score:
                     lead_peptide = peptide
                     hi_score = peptide_score
@@ -350,7 +361,8 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
 # further increases chance that leaderboard incorporates an incorrect peptide with a similar weight. To get around this,
 # only want to consider the relevant amino acids of a spectrum. Find the convolution of a spectrum: the positive 
 # differences in masses of all subpeptides. If experimental contains NQE and NQ, you get mass of E even if it wasn't
-# in the experimental spectrum. Sort the counts of occurrences of these masses to get the likely amino acids.
+# in the experimental spectrum. Sort the counts of occurrences of these masses to get the likely amino acids. Only
+# keep aas between 57 and 200 (heuristic to keep likely aa)
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -365,6 +377,34 @@ def spectral_convolution(spectrum):
     conv = list(chain.from_iterable(repeat(i, c) for i, c in Counter(conv).most_common()))
     return conv
         
+
+def keep_topn_convolution(conv_topn, spectrum):
+    conv = np.array(spectral_convolution(spectrum))
+    conv = conv[(conv > 57) & (conv < 200)]
+    peptides, counts = np.unique(conv, return_counts=True)
+    sort_ix = np.argsort(counts)[::-1]
+    sorted_peptides = [peptides[ix] for ix in sort_ix]
+    sorted_counts = [counts[ix] for ix in sort_ix]
+    for i in range(conv_topn, len(sorted_counts)):
+        if sorted_counts[i] < sorted_counts[conv_topn-1]:
+            return sorted_peptides[:i]
+    return sorted_peptides
+
+
+# hacky: before was working with aa_mass as a dict that had aa names as keys and int mass as values. new aas identified
+# from topn conv may be outside of these 20 aas - init a generic dict with the int masses as values again
+def aa_intmass_dict(intmass_list):
+    aa_dict = {}
+    for i in range(len(intmass_list)):
+        aa_dict[i] = intmass_list[i]
+    return aa_dict
+
+
+def convolution_cyclopeptide_seq(conv_topn, leaderboard_topn, spectrum):
+    leaderboard = keep_topn_convolution(conv_topn, spectrum)
+    aa_mass = aa_intmass_dict(leaderboard)
+    lead_peptide = leaderboard_cyclopeptide_seq(spectrum, leaderboard_topn, aa_mass)
+    return lead_peptide
 
 
 
@@ -397,7 +437,13 @@ aa_mass = get_aa_mass()
 # print(linear_peptide_score_int(peptide_int, spectrum, aa_mass))
 # print(leaderboard_cyclopeptide_seq(spectrum, top_n, aa_mass))
 
-spectrum = [0, 137, 186, 323]
-output = spectral_convolution(spectrum)
-print(output)
+# spectrum = [0, 137, 186, 323]
+# output = spectral_convolution(spectrum)
+# print(output)
+
+
+# print(keep_topn_convolution(20, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493]))
+tt = convolution_cyclopeptide_seq(20, 60, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493])
+print(tt)
+
 
