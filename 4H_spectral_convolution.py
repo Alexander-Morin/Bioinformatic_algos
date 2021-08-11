@@ -20,7 +20,7 @@ from itertools import repeat, chain
 def spectral_convolution(spectrum):
     """
     spectrum: list of integers corresponding to the input spectrum
-    returns a list of integers sorted by element occurrence
+    returns a list of the positive differences in subpeptides of the spectrum, sorted by element occurrence
     """
     conv = []
     for i in range(0, len(spectrum)):
