@@ -1,14 +1,19 @@
-# Implementing code
+# Implementing code to find the lead seequenced peptide from an input spectrum. Leaderboard sequencing keep 'n' best
+# scoring candidates, but struggles when there are more frequent mass spec errors. Additionally, need to consider amino
+# acids beyond the standard 20 for the topic problem (sequencing a bacterial antibiotic non ribosomal peptide), so
+# generate the spectral convolution (positive differences between subpeptides) of the input spectrum to get the 'm'
+# most likely amino aicds. These are then fed into leaderboard seq.
 
 # Problem 4I in the BALA textbook/Rosalind
 
-# Input is X
-# X
-# X
-# X
+# Input is a text file where the first line is the leaderboard threshold, second line is convolution threshold, and
+# the third line is the input spectrum
+# 20
+# 60
+# 57 57 71 99 129 137 170 186 194 208 228 265 285 299 307 323 356 364 394 422 493
 
-# Output is X
-# X
+# Output is lead peptiden in integer mass form
+# 99-71-137-57-72-57
 
 # Usage: python3 4I_convolution_cyclopeptide_sequencing.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
@@ -21,14 +26,16 @@ from itertools import repeat, chain
 
 
 def aa_intmass_dict(intmass_list):
-    """"""
+    """
+    dict mapping a list of amino acid integer masses
+    """
     aa_dict = {}
     for i in range(len(intmass_list)):
         aa_dict[i] = intmass_list[i]
     return aa_dict
 
 
-def linear_spectrum_int(peptide_int, aa_mass):
+def linear_spectrum_int(peptide_int):
     """
     peptide_int: a peptide string represented by its integer masses: 129-227-257
     aa_mass: dict mapping amino acids to their integer masses
@@ -80,7 +87,7 @@ def grow_peptide(peptides, aa_mass):
     return new_peptides
 
 
-def linear_peptide_score_int(peptide_int, spectrum, aa_mass):
+def linear_peptide_score_int(peptide_int, spectrum):
     """
     peptide_int: a peptide string represented by its integer masses: 129-227-257
     spectrum: a list of peptide inter masses
@@ -89,7 +96,7 @@ def linear_peptide_score_int(peptide_int, spectrum, aa_mass):
     """
     score = 0
     spectrum_cp = spectrum.copy()
-    peptide_spectrum = linear_spectrum_int(peptide_int, aa_mass)
+    peptide_spectrum = linear_spectrum_int(peptide_int)
     for mass in peptide_spectrum:
         if mass in spectrum_cp:
             score += 1
@@ -97,7 +104,7 @@ def linear_peptide_score_int(peptide_int, spectrum, aa_mass):
     return score
 
 
-def cyclic_spectrum_int(peptide_int, aa_mass):
+def cyclic_spectrum_int(peptide_int):
     """
     peptide_int: a peptide string represented by its integer masses: 129-227-257
     aa_mass: dict mapping amino acids to their integer masses
@@ -130,7 +137,7 @@ def cyclic_spectrum_int(peptide_int, aa_mass):
     return cyclic_spectrum
 
 
-def cyclopeptide_scoring(peptide_int, spectrum, aa_mass):
+def cyclopeptide_scoring(peptide_int, spectrum):
     """
     peptide_int: a peptide string represented by its integer masses: 129-227-257
     spectrum: a list of peptide inter masses
@@ -139,7 +146,7 @@ def cyclopeptide_scoring(peptide_int, spectrum, aa_mass):
     """
     score = 0
     spectrum_cp = spectrum.copy()
-    peptide_spectrum = cyclic_spectrum_int(peptide_int, aa_mass)
+    peptide_spectrum = cyclic_spectrum_int(peptide_int)
     for mass in peptide_spectrum:
         if mass in spectrum_cp:
             score += 1
@@ -147,17 +154,17 @@ def cyclopeptide_scoring(peptide_int, spectrum, aa_mass):
     return score
 
 
-def trim_int(leaderboard, spectrum, n, aa_mass):
+def trim_int(leaderboard, spectrum, leaderboard_topn):
     """
     leaderboard: a set of candidate peptides
     spectrum: a list of peptide integer masses
-    n: an int corresponding to how many top elements to keep
+    leaderboard_topn: an int corresponding to how many top elements to keep
     aa_mass: dict mapping amino acids to their integer masses
     returns a list of the top n peptides
     """
-    n = min(n, len(leaderboard))
+    n = min(leaderboard_topn, len(leaderboard))
     leaderboard = list(leaderboard)
-    scores = [linear_peptide_score_int(peptide, spectrum, aa_mass) for peptide in leaderboard]
+    scores = [linear_peptide_score_int(peptide, spectrum) for peptide in leaderboard]
     sorted_ix = np.argsort(scores)[::-1]
     sorted_scores = [scores[ix] for ix in sorted_ix]
     sorted_peptides = [leaderboard[ix] for ix in sorted_ix]
@@ -168,10 +175,10 @@ def trim_int(leaderboard, spectrum, n, aa_mass):
     return sorted_peptides
 
 
-def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
+def leaderboard_cyclopeptide_seq(spectrum, leaderboard_topn, aa_mass):
     """
     spectrum: a list of the integer masses of a peptide spectrum
-    n: an int corresponding to how many top elements to keep
+    leaderboard_topn: an int corresponding to how many top elements to keep
     aa_mass: dict mapping amino acids to their integer masses
     returns a string corresponding to the integer peptide with the best score to the spectrum
     """
@@ -182,21 +189,21 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
         leaderboard = grow_peptide(leaderboard, aa_mass)  # branch step
         for peptide in leaderboard.copy():
             if get_integer_mass(peptide) == parent_mass:
-                peptide_score = cyclopeptide_scoring(peptide, spectrum, aa_mass)
+                peptide_score = cyclopeptide_scoring(peptide, spectrum)
                 if peptide_score > hi_score:
                     lead_peptide = peptide
                     hi_score = peptide_score
             elif get_integer_mass(peptide) > parent_mass:
                 leaderboard.remove(peptide)
         if len(leaderboard) > 0:   # bound step
-            leaderboard = trim_int(leaderboard, spectrum, n, aa_mass)
+            leaderboard = trim_int(leaderboard, spectrum, leaderboard_topn)
     return lead_peptide
 
 
 def spectral_convolution(spectrum):
     """
     spectrum: list of integers corresponding to the input spectrum
-    returns a list of integers sorted by element occurrence
+    returns a list of the positive differences in subpeptides of the spectrum, sorted by element occurrence
     """
     conv = []
     for i in range(0, len(spectrum)):
@@ -210,7 +217,10 @@ def spectral_convolution(spectrum):
 
 
 def keep_topn_convolution(conv_topn, spectrum):
-    """"""
+    """
+    conv_topn: integer of how many of the most frequently occurring subpeptides in spectrum to keep
+    spectrum: list of integers corresponding to the input spectrum
+    """
     conv = np.array(spectral_convolution(spectrum))
     conv = conv[(conv >= 57) & (conv <= 200)]
     peptides, counts = np.unique(conv, return_counts=True)
@@ -224,7 +234,12 @@ def keep_topn_convolution(conv_topn, spectrum):
 
 
 def convolution_cyclopeptide_seq(conv_topn, leaderboard_topn, spectrum):
-    """"""
+    """
+    conv_topn: integer of how many of the most frequently occurring subpeptides in spectrum to keep
+    leaderboard_topn: an int corresponding to how many top scoring elements in leaderboard to keep
+    spectrum: list of integers corresponding to the input spectrum
+    returns the peptide (represented in integer mass) with the highest score
+    """
     leaderboard = keep_topn_convolution(conv_topn, spectrum)
     aa_mass = aa_intmass_dict(leaderboard)
     lead_peptide = leaderboard_cyclopeptide_seq(spectrum, leaderboard_topn, aa_mass)
@@ -233,7 +248,7 @@ def convolution_cyclopeptide_seq(conv_topn, leaderboard_topn, spectrum):
 
 def main():
     """
-    Read the input file, parse the arguments, and X
+    Read the input file, parse the arguments, and find the lead peptide
     """
     argv = list(sys.argv)
     input_conv_topn = None

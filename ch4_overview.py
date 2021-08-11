@@ -356,7 +356,7 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
 
 
 # Notes that the leaderboard sequencing is a heuristic that will degrade in performance when the number of errors 
-# (missing or false masses) increases. A futher wrinkle is that in reality, there are more than 20 of the proteinogenic
+# (missing or false masses) increases. A further wrinkle is that in reality, there are more than 20 of the proteinogenic
 # amino acids (Selenocystein and Pyrrolysine bring it to 22), and NRPs can incorporate non-proteinogenic acids which 
 # further increases chance that leaderboard incorporates an incorrect peptide with a similar weight. To get around this,
 # only want to consider the relevant amino acids of a spectrum. Find the convolution of a spectrum: the positive 
