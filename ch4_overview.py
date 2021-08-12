@@ -362,7 +362,7 @@ def leaderboard_cyclopeptide_seq(spectrum, n, aa_mass):
 # only want to consider the relevant amino acids of a spectrum. Find the convolution of a spectrum: the positive 
 # differences in masses of all subpeptides. If experimental contains NQE and NQ, you get mass of E even if it wasn't
 # in the experimental spectrum. Sort the counts of occurrences of these masses to get the likely amino acids. Only
-# keep aas between 57 and 200 (heuristic to keep likely aa)
+# keep aas between 57 and 200 (heuristic to keep likely aa), and feed only these top aas into leaderboard
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -408,6 +408,18 @@ def convolution_cyclopeptide_seq(conv_topn, leaderboard_topn, spectrum):
 
 
 
+# Final comments: In reality mass spec doesn't work with subpeptides, but rather splits into ions that are sorted
+# electromagnetically by their (continuous) mass/charge ratio. In reality the charges are not known, requiring iteration
+# from 1 to max charge, with many false positives. Finally, the text relates the 'alphabet of arbitrary integers' of
+# cyclopeptide sequencing to the Beltway (circle) and Turnpike (line) problems. Given a collection of integers that
+# correspond to the distances between points on a circle/line, provide the original locations of those points. For
+# n points, the Beltway problem has n(n-1)+2 distances and the Turnpike has n(n-1)/2+2 distances. No polynomial
+# algorithm exists for either, but a pseudopolynomial exists for the Turnpike problem (polynomial in the length of
+# the line segment).
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -443,7 +455,6 @@ aa_mass = get_aa_mass()
 
 
 # print(keep_topn_convolution(20, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493]))
-tt = convolution_cyclopeptide_seq(20, 60, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493])
-print(tt)
+# print(convolution_cyclopeptide_seq(20, 60, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493]))
 
 
