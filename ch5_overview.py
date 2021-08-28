@@ -1,6 +1,7 @@
 # This chaper explores how we compare DNA sequences using dynamic programming
 
 import numpy as np
+import pandas as pd
 
 # Text begins with the motivation of cracking the non-ribosomal code - non-ribosomal peptides (NRPs) produced by NRP
 # synthetase. Specifically, looking at the adenylation domains (A-domains) of NRP synthetase responsible for adding
@@ -24,10 +25,34 @@ def greedy_change(money, coins):
     return change
 
 
+def recursive_change(money, coins):
+    if money == 0:
+        return 0
+    min_num_coins = np.inf
+    for i in range(len(coins)):
+        if money >= coins[i]:
+            num_coins = recursive_change(money - coins[i], coins)
+            if num_coins + 1 < min_num_coins:
+                min_num_coins = num_coins + 1
+    return min_num_coins
+
+
+# O(money * len(coins))
+def dp_change(money, coins):
+    min_num_coins = [0] * (money + 1)
+    for m in range(1, money + 1):
+        min_num_coins[m] = np.inf
+        for i in range(len(coins)):
+            if m >= coins[i]:
+                if min_num_coins[m - coins[i]] + 1 < min_num_coins[m]:
+                    min_num_coins[m] = min_num_coins[m - coins[i]] + 1
+    return min_num_coins[money]
+
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
 
-
-coins = [120, 40, 30, 24, 20, 10, 5, 4, 1]
-print(greedy_change(48, coins))
+# print(greedy_change(48, [120, 40, 30, 24, 20, 10, 5, 4, 1]))
+# print(recursive_change(40, [5, 4, 1]))
+print(dp_change(40, [1, 5, 10, 20, 25, 50]))
