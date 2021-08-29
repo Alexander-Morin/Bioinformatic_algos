@@ -49,10 +49,54 @@ def dp_change(money, coins):
     return min_num_coins[money]
 
 
+# The goal then becomes to implement a DP approach to the Manhattan tourist problem. Imagine an ixj table starting at
+# top left (seed: 0,0) and you can only go right from (i, j-1) or down from (i-1, j). Each path has a weight, and want
+# to get to the bottom right point (sink, n, m) via a path that has the highest sum weights. The first solution is
+# recrusive and re-calculates steps many times. The DP approach calculates every sub-step to find the ultimate max.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+# recursive
+def south_or_east(i, j, v_edge_weight, h_edge_weight):
+    if i == 0 and j == 0:
+        return 0
+    x, j = -np.inf
+    if i > 0:
+        x = south_or_east(i-1, j) + h_edge_weight(i, j)
+    if j > 0:
+        y = south_or_east(i, j-1) + v_edge_weight(i, j)
+    return max(x, y)
+
+
+# DP
+def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
+    scores = np.zeros([i+1, j+1])
+    for x in range(1, i):
+        scores[x][0] = scores[x-1][0] + v_edge_weight[x][0]
+    for y in range(1, j):
+        scores[0][y] = scores[0][y-1] + h_edge_weight[0][y]
+    for x in range(1, i):
+        for y in range(1, j):
+            scores[x][y] = max(scores[x-1][y] + v_edge_weight[x][y], scores[x][y-1] + h_edge_weight[x][y])
+    return scores
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
 
 # print(greedy_change(48, [120, 40, 30, 24, 20, 10, 5, 4, 1]))
 # print(recursive_change(40, [5, 4, 1]))
-print(dp_change(40, [1, 5, 10, 20, 25, 50]))
+# print(dp_change(40, [1, 5, 10, 20, 25, 50]))
+
+i, j = 4, 4
+v_weights = np.array([[1, 0, 2, 4, 3],
+                      [4, 6, 5, 2, 1],
+                      [4, 4, 5, 2, 1],
+                      [5, 6, 8, 5, 3]])
+
+h_weights = np.array([[3, 2, 4, 0],
+                      [3, 2, 4, 2],
+                      [0, 7, 3, 3],
+                      [3, 3, 0, 2],
+                      [1, 3, 2, 2]])
+print(manhattan_tourist(i, j, v_weights, h_weights))
