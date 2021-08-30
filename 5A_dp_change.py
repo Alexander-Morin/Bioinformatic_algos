@@ -22,6 +22,10 @@ import numpy as np
 
 
 def dp_change(money, coins):
+    """
+    money is an integer of the amount to make change
+    coins is a list of integers of the coin denominations
+    """
     min_num_coins = [0] * (money + 1)
     for m in range(1, money + 1):
         min_num_coins[m] = np.inf
