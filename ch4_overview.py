@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from itertools import repeat, chain
+import random
 
 # Text begins by motivating how Bacillus brevis creates/encodes the antibiotic Tyrocidine B1, which is 10 aa long
 # ----------------------------------------------------------------------------------------------------------------------
@@ -419,6 +420,27 @@ def convolution_cyclopeptide_seq(conv_topn, leaderboard_topn, spectrum):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def point_differences(int_list):
+    diff_list = []
+    for i in range(0, len(int_list)):
+        for j in range(0, len(int_list)):
+            diff_list.append(int_list[j] - int_list[i])
+    return sorted(diff_list)
+
+
+def turnpike_problem(diff_list):
+    n_term = diff_list.count(0)
+    points = [0, max(diff_list)]
+    candidates = set(abs(np.array(diff_list))).difference(points)
+    n = n_term-2
+    while True:
+        sub = random.sample(candidates, k=n)
+        test = sorted(points + sub)
+        test_diff = point_differences(test)
+        if test_diff == diff_list:
+            return test
+
+
 
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
@@ -453,8 +475,10 @@ aa_mass = get_aa_mass()
 # output = spectral_convolution(spectrum)
 # print(output)
 
-
 # print(keep_topn_convolution(20, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493]))
 # print(convolution_cyclopeptide_seq(20, 60, [57, 57, 71, 99, 129, 137, 170, 186, 194, 208, 228, 265, 285, 299, 307, 323, 356, 364, 394, 422, 493]))
 
-
+print(point_differences([0, 3, 6, 8, 10]))
+print(point_differences([0, 3, 6, 8, 10]) == point_differences([0, 2, 4, 7, 10]))
+L = [-10, -8, -7, -6, -5, -4, -3, -3, -2, -2, 0, 0, 0, 0, 0, 2, 2, 3, 3, 4, 5, 6, 7, 8, 10]
+print(turnpike_problem(L))
