@@ -71,14 +71,14 @@ def south_or_east(i, j, v_edge_weight, h_edge_weight):
 # DP
 def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
     scores = np.zeros([i+1, j+1])
-    for x in range(1, i):
-        scores[x][0] = scores[x-1][0] + v_edge_weight[x][0]
-    for y in range(1, j):
-        scores[0][y] = scores[0][y-1] + h_edge_weight[0][y]
-    for x in range(1, i):
-        for y in range(1, j):
-            scores[x][y] = max(scores[x-1][y] + v_edge_weight[x][y], scores[x][y-1] + h_edge_weight[x][y])
-    return scores
+    for x in range(1, i+1):
+        scores[x][0] = scores[x-1][0] + v_edge_weight[x-1][0]
+    for y in range(1, j+1):
+        scores[0][y] = scores[0][y-1] + h_edge_weight[0][y-1]
+    for x in range(1, i+1):
+        for y in range(1, j+1):
+            scores[x][y] = max(scores[x-1][y] + v_edge_weight[x-1][y], scores[x][y-1] + h_edge_weight[x][y-1])
+    return int(scores[i][j])
 
 
 # Example inputs
@@ -88,15 +88,15 @@ def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
 # print(recursive_change(40, [5, 4, 1]))
 # print(dp_change(40, [1, 5, 10, 20, 25, 50]))
 
-i, j = 4, 4
-v_weights = np.array([[1, 0, 2, 4, 3],
-                      [4, 6, 5, 2, 1],
-                      [4, 4, 5, 2, 1],
-                      [5, 6, 8, 5, 3]])
-
-h_weights = np.array([[3, 2, 4, 0],
-                      [3, 2, 4, 2],
-                      [0, 7, 3, 3],
-                      [3, 3, 0, 2],
-                      [1, 3, 2, 2]])
-print(manhattan_tourist(i, j, v_weights, h_weights))
+# i, j = 4, 4
+# v_weights = np.array([[1, 0, 2, 4, 3],
+#                       [4, 6, 5, 2, 1],
+#                       [4, 4, 5, 2, 1],
+#                       [5, 6, 8, 5, 3]])
+#
+# h_weights = np.array([[3, 2, 4, 0],
+#                       [3, 2, 4, 2],
+#                       [0, 7, 3, 3],
+#                       [3, 3, 0, 2],
+#                       [1, 3, 2, 2]])
+# print(manhattan_tourist(i, j, v_weights, h_weights))
