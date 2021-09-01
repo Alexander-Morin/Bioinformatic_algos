@@ -2,6 +2,7 @@
 
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 # Text begins with the motivation of cracking the non-ribosomal code - non-ribosomal peptides (NRPs) produced by NRP
 # synthetase. Specifically, looking at the adenylation domains (A-domains) of NRP synthetase responsible for adding
@@ -81,6 +82,65 @@ def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
     return int(scores[i][j])
 
 
+# From here, the task becomes to adapt the Manhattan tourist to alignment graphs that have diagonal edges, which
+# represent matches. The text notes that we can find the longest common subsequence (LCS) without building the "city
+# grid." However, "the arguments to do so are tedious." It also notes that many applications of alignment are much
+# more complex than the LCS problem, and require building a DAG with specifically learned edge weights to reflect
+# biology. Goal is to just then learn a generic DP approach that will find the longest path in any DAG, which itself
+# is a tool that can be applied to many other problems. Note that before we were working with a rectangular graph with
+# inherit order to the columns/rows. This ordering is important as DP requires previous problems to be solved/nodes
+# have been visited. The goal of using DP approach for finding longest paths is to choose a path that maximizes the
+# recurrence: sb = max of all predecessors nodes a of b { sa + weight of edge a to b }. Therefore must topologically
+# order the graph such that every edge (ai, aj) of the DAG connects with a node with a smaller index to a larger index.
+# This ordering can be done in time proportional to the number of edges in the graph. Works off of the fact that every
+# DAG has at least one node with no incoming edges - remove this node and its outgoing edges. The following DAG will
+# also have a node with no incoming edges. Proceed until all nodes removed.
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def parse_graph(list_input):
+    graph = defaultdict(list)
+    for line in list_input:
+        split_input = line.split(" -> ")
+        in_node = split_input[0].strip()
+        out_nodes = split_input[1].split(",")
+        for node in out_nodes:
+            graph[in_node].append(node)
+            graph[node]  # initialize a node in case it only has edges coming in
+    return graph
+
+
+def count_edges(graph):
+    nodes = set(graph)
+    edge_df = pd.DataFrame(
+        {"Edges_in": [0] * len(nodes),
+         "Edges_out": [0] * len(nodes)},
+        index=nodes)
+    for node in graph:
+        edge_df.at[node, 'Edges_out'] = len(graph[node])
+        for target in graph[node]:
+            edge_df.at[target, 'Edges_in'] += 1
+    return edge_df
+
+
+def topological_ordering(graph):
+    order = []
+    count = count_edges(graph)
+    candidates = list(count[count["Edges_in"] == 0].index.values)
+    while candidates:
+        node_a = candidates[0]
+        order.append(node_a)
+        candidates.remove(node_a)
+        for node_b in graph[node_a]:
+            graph[node_a].remove(node_b)
+            if count.at[node_b, "Edges_in"] == 0:
+                candidates.append(node_b)
+    print(graph)
+    # if len(graph) > 0:
+    #     return "Input graph is not a DAG"
+    return order
+
+
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -100,3 +160,12 @@ def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
 #                       [3, 3, 0, 2],
 #                       [1, 3, 2, 2]])
 # print(manhattan_tourist(i, j, v_weights, h_weights))
+
+graph_input = ["1 -> 2",
+         "2 -> 3",
+         "4 -> 2",
+         "5 -> 3"
+         ]
+graph = parse_graph(graph_input)
+print(graph)
+print(topological_ordering(graph))
