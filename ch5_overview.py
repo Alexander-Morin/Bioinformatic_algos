@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 from collections import defaultdict
+import copy
 
 # Text begins with the motivation of cracking the non-ribosomal code - non-ribosomal peptides (NRPs) produced by NRP
 # synthetase. Specifically, looking at the adenylation domains (A-domains) of NRP synthetase responsible for adding
@@ -127,17 +128,18 @@ def topological_ordering(graph):
     order = []
     count = count_edges(graph)
     candidates = list(count[count["Edges_in"] == 0].index.values)
+    graph_cp = copy.deepcopy(graph)
     while candidates:
         node_a = candidates[0]
         order.append(node_a)
         candidates.remove(node_a)
         for node_b in graph[node_a]:
-            graph[node_a].remove(node_b)
+            graph_cp[node_a].remove(node_b)
+            count.at[node_b, "Edges_in"] -= 1
             if count.at[node_b, "Edges_in"] == 0:
                 candidates.append(node_b)
-    print(graph)
-    # if len(graph) > 0:
-    #     return "Input graph is not a DAG"
+    if all(count["Edges_in"]) != 0:
+        return "Input graph is not a DAG"
     return order
 
 
@@ -162,10 +164,9 @@ def topological_ordering(graph):
 # print(manhattan_tourist(i, j, v_weights, h_weights))
 
 graph_input = ["1 -> 2",
-         "2 -> 3",
-         "4 -> 2",
-         "5 -> 3"
-         ]
+               "2 -> 3",
+               "4 -> 2",
+               "5 -> 3"]
 graph = parse_graph(graph_input)
 print(graph)
 print(topological_ordering(graph))
