@@ -143,6 +143,81 @@ def topological_ordering(graph):
     return order
 
 
+# Once we have a topological ordering, find the length of the longest path from source to sink by visiting the nodes
+# in their ordered form. For simplicity assume that the only the source node is the only node with in degree == 0.
+# Note modification to graph helpers to account for node_a->node_b:weight structure of the input - each edge now
+# represented as a list where the first element is node a and the second element is the weight
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def parse_weighted_graph(list_input):
+    graph = defaultdict(list)
+    for line in list_input:
+        split_input = line.split("->")
+        in_node = int(split_input[0].strip())
+        out_node = [int(x) for x in split_input[1].split(":")]
+        graph[in_node].append(out_node)
+        graph[out_node[0]]  # initialize a node (excluding weight) in case it only has edges coming in
+    return graph
+
+
+def count_weighted_edges(graph):
+    nodes = set(graph)
+    edge_df = pd.DataFrame(
+        {"Edges_in": [0] * len(nodes),
+         "Edges_out": [0] * len(nodes)},
+        index=nodes)
+    for node in graph:
+        edge_df.at[node, 'Edges_out'] = len(graph[node])
+        for target in graph[node]:
+            target_node = target[0]  # just refer to node (first element) for key in count df
+            edge_df.at[target_node, 'Edges_in'] += 1
+    return edge_df
+
+
+def topological_ordering_weighted_graph(graph):
+    order = []
+    count = count_weighted_edges(graph)
+    candidates = list(count[count["Edges_in"] == 0].index.values)
+    graph_cp = copy.deepcopy(graph)
+    while candidates:
+        node_a = candidates[0]
+        order.append(node_a)
+        candidates.remove(node_a)
+        for node_b in graph[node_a]:
+            graph_cp[node_a].remove(node_b)
+            count.at[node_b[0], "Edges_in"] -= 1
+            if count.at[node_b[0], "Edges_in"] == 0:
+                candidates.append(node_b[0])
+    if all(count["Edges_in"]) != 0:
+        return "Input graph is not a DAG"
+    return order
+
+
+# TODO: there should be a more elegant way than having to check entire graph to find all predecessors of node_b.
+def longest_path(graph, source, sink):
+    order = topological_ordering_weighted_graph(graph)
+    scores = [0] * len(order)
+    for i in range(1, len(scores)):
+        node_b = order[i]
+        for node_a in graph:
+            if len(graph[node_a]) > 0:
+                for target in graph[node_a]:
+                    if target[0] == node_b:
+                        test_score = target[1] + scores[node_a]
+                        if test_score > scores[i]:
+                            scores[i] = test_score
+    return scores[sink]
+
+# While we have the longest path, we still need to reconstruct the LCS. Note that tracing a path from source to sink
+# may reach a dead end, but all paths starting from sink will lead to the source. Use a backtrack algorithm with
+# pointers that keeps track of the path (down=0, right=0, diagonal=1) in a matrix
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 # Example inputs
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -163,10 +238,20 @@ def topological_ordering(graph):
 #                       [1, 3, 2, 2]])
 # print(manhattan_tourist(i, j, v_weights, h_weights))
 
-graph_input = ["1 -> 2",
-               "2 -> 3",
-               "4 -> 2",
-               "5 -> 3"]
-graph = parse_graph(graph_input)
-print(graph)
-print(topological_ordering(graph))
+# graph_input = ["1 -> 2",
+#                "2 -> 3",
+#                "4 -> 2",
+#                "5 -> 3"]
+# graph = parse_graph(graph_input)
+# print(topological_ordering(graph))
+
+weighted_graph_input = ["0->1:7",
+                        "0->2:4",
+                        "2->3:2",
+                        "1->4:1",
+                        "3->4:3"]
+graph = parse_weighted_graph(weighted_graph_input)
+# print(graph)
+# print(topological_ordering_weighted_graph(graph))
+# print(count_weighted_edges(graph))
+print(longest_path(graph, 0, 4))
