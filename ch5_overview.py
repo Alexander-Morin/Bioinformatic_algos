@@ -215,7 +215,34 @@ def longest_path(graph, source, sink):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
+def lcs_backtrack(string1, string2):
+    scores = np.zeros([len(string1) + 1, len(string2) + 1])
+    backtrack = np.empty([len(string1), len(string2)], dtype='object')
+    for i in range(1, len(string1) + 1):
+        for j in range(1, len(string2) + 1):
+            if string1[i] == string2[j]:
+                scores[i, j] = max(scores[i-1, j], scores[i, j-1], scores[i-1, j-1] + 1)
+            else:
+                scores[i, j] = max(scores[i - 1, j], scores[i, j - 1])
+            if scores[i, j] == scores[i-1, j]:
+                backtrack[i, j] = "Down"
+            elif scores[i, j] == scores[i, j-1]:
+                backtrack[i, j] = "Right"
+            elif scores[i, j] == (scores[i-1, j-1] + 1) and string1[i] == string2[j]:
+                backtrack[i, j] = "Diagonal"
+    return backtrack, scores
 
+
+def output_lcs(backtrack, string1, i, j):
+    if i == 0 or j == 0:
+        return
+    if backtrack[i, j] == "Down":
+        output_lcs(backtrack, string1, i-1, j)
+    elif backtrack[i, j] == "Right":
+        output_lcs(backtrack, string1, i, j-1)
+    else:
+        output_lcs(backtrack, string1, i-1, j-1)
+        print(string1[i])
 
 
 # Example inputs
@@ -251,7 +278,12 @@ weighted_graph_input = ["0->1:7",
                         "1->4:1",
                         "3->4:3"]
 graph = parse_weighted_graph(weighted_graph_input)
+string1 = "AACCTTGG"
+string2 = "ACACTGTGA"
 # print(graph)
 # print(topological_ordering_weighted_graph(graph))
 # print(count_weighted_edges(graph))
-print(longest_path(graph, 0, 4))
+# print(longest_path(graph, 0, 4))
+backtrack = lcs_backtrack(string1, string2)
+print(backtrack)
+# print(output_lcs(backtrack, string1, len(string1), len(string2)))
