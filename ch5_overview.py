@@ -1,4 +1,4 @@
-# This chaper explores how we compare DNA sequences using dynamic programming
+# This chapter explores how we compare DNA sequences using dynamic programming
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ def dp_change(money, coins):
 # The goal then becomes to implement a DP approach to the Manhattan tourist problem. Imagine an ixj table starting at
 # top left (seed: 0,0) and you can only go right from (i, j-1) or down from (i-1, j). Each path has a weight, and want
 # to get to the bottom right point (sink, n, m) via a path that has the highest sum weights. The first solution is
-# recrusive and re-calculates steps many times. The DP approach calculates every sub-step to find the ultimate max.
+# recursive and re-calculates steps many times. The DP approach calculates every sub-step to find the ultimate max.
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -70,17 +70,16 @@ def south_or_east(i, j, v_edge_weight, h_edge_weight):
     return max(x, y)
 
 
-# DP
 def manhattan_tourist(i, j, v_edge_weight, h_edge_weight):
     scores = np.zeros([i+1, j+1])
     for x in range(1, i+1):
-        scores[x][0] = scores[x-1][0] + v_edge_weight[x-1][0]
+        scores[x, 0] = scores[x-1, 0] + v_edge_weight[x-1, 0]
     for y in range(1, j+1):
-        scores[0][y] = scores[0][y-1] + h_edge_weight[0][y-1]
+        scores[0, y] = scores[0, y-1] + h_edge_weight[0, y-1]
     for x in range(1, i+1):
         for y in range(1, j+1):
-            scores[x][y] = max(scores[x-1][y] + v_edge_weight[x-1][y], scores[x][y-1] + h_edge_weight[x][y-1])
-    return int(scores[i][j])
+            scores[x, y] = max(scores[x-1, y] + v_edge_weight[x-1, y], scores[x, y-1] + h_edge_weight[x, y-1])
+    return int(scores[i, j])
 
 
 # From here, the task becomes to adapt the Manhattan tourist to alignment graphs that have diagonal edges, which
@@ -216,33 +215,46 @@ def longest_path(graph, source, sink):
 
 
 def lcs_backtrack(string1, string2):
-    scores = np.zeros([len(string1) + 1, len(string2) + 1])
-    backtrack = np.empty([len(string1), len(string2)], dtype='object')
-    for i in range(1, len(string1) + 1):
-        for j in range(1, len(string2) + 1):
-            if string1[i] == string2[j]:
-                scores[i, j] = max(scores[i-1, j], scores[i, j-1], scores[i-1, j-1] + 1)
+
+    scores = np.zeros([len(string1)+1, len(string2)+1])
+    backtrack = np.empty([len(string1)+1, len(string2)+1], dtype="object")
+
+    for i in range(1, len(string1)+1):
+        for j in range(1, len(string2)+1):
+
+            if string1[i-1] == string2[j-1]:
+                scores[i, j] = max(scores[i-1, j-1] + 1, scores[i-1, j], scores[i, j-1])
             else:
-                scores[i, j] = max(scores[i - 1, j], scores[i, j - 1])
+                scores[i, j] = max(scores[i-1, j], scores[i, j-1])
+
             if scores[i, j] == scores[i-1, j]:
                 backtrack[i, j] = "Down"
             elif scores[i, j] == scores[i, j-1]:
                 backtrack[i, j] = "Right"
-            elif scores[i, j] == (scores[i-1, j-1] + 1) and string1[i] == string2[j]:
+            elif (scores[i, j] == scores[i-1, j-1] + 1) & (string1[i-1] == string2[j-1]):
                 backtrack[i, j] = "Diagonal"
-    return backtrack, scores
+
+    return backtrack
+
 
 
 def output_lcs(backtrack, string1, i, j):
-    if i == 0 or j == 0:
-        return
-    if backtrack[i, j] == "Down":
-        output_lcs(backtrack, string1, i-1, j)
-    elif backtrack[i, j] == "Right":
-        output_lcs(backtrack, string1, i, j-1)
-    else:
-        output_lcs(backtrack, string1, i-1, j-1)
-        print(string1[i])
+
+    output = []
+
+    def recursive_output(backtrack, string1, i, j, output):
+        if i == 0 or j == 0:
+            return None
+        if backtrack[i, j] == "Down":
+            recursive_output(backtrack, string1, i-1, j, output)
+        elif backtrack[i, j] == "Right":
+            recursive_output(backtrack, string1, i, j-1, output)
+        else:
+            recursive_output(backtrack, string1, i-1, j-1, output)
+            output.append(string1[i-1])
+
+    recursive_output(backtrack, string1, i, j, output)
+    return "".join(output)
 
 
 # Example inputs
@@ -257,7 +269,7 @@ def output_lcs(backtrack, string1, i, j):
 #                       [4, 6, 5, 2, 1],
 #                       [4, 4, 5, 2, 1],
 #                       [5, 6, 8, 5, 3]])
-#
+
 # h_weights = np.array([[3, 2, 4, 0],
 #                       [3, 2, 4, 2],
 #                       [0, 7, 3, 3],
@@ -285,5 +297,5 @@ string2 = "ACACTGTGA"
 # print(count_weighted_edges(graph))
 # print(longest_path(graph, 0, 4))
 backtrack = lcs_backtrack(string1, string2)
-print(backtrack)
-# print(output_lcs(backtrack, string1, len(string1), len(string2)))
+# print(backtrack)
+print(output_lcs(backtrack, string1, len(string1), len(string2)))
