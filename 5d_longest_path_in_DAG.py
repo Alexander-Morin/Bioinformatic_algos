@@ -1,10 +1,21 @@
-#
+# Finding the longest path/highest score in a weighted DAG. Implement a dynamic programming approach that finds the
+# max path score following a topological ordering, along with a backtracking approach to actually construct the path
+# from source to sink.
 
 # Problem 5D in the BALA textbook/Rosalind
 
-# Input
+# Input is a text file the first line is the graph source, the second line is the graph sink, and all following lines
+# are the graph edges in form node_a->node_b:edge_weight
+# 0
+# 4
+# 0->1:7
+# 0->2:4
+# 2->3:2
+# 1->4:1
+# 3->4:3
 
-# Output
+# Output is the score of the longest path and the corresponding path
+# (9, '0->2->3->4')
 
 # Usage: python3 5D_lcs_backtrack.py input.txt > output.txt
 # ----------------------------------------------------------------------------------------------------------------------
@@ -18,6 +29,10 @@ import math
 
 
 def parse_weighted_graph(line_input):
+    """
+    list_input: list containing nodes/edges of form '2->1:6'
+    return an adjacency list/dictionary
+    """
     graph = defaultdict(list)
     for line in line_input:
         edge = line.split("->")
@@ -29,6 +44,10 @@ def parse_weighted_graph(line_input):
 
 
 def count_weighted_edges(graph):
+    """
+    graph: adjacency list (as a dict) of the graph
+    returns a pandas DF with nodes as index and columns for count of edges in and out
+    """
     nodes = set(graph)
     edge_df = pd.DataFrame(
         {"Edges_in": [0] * len(nodes),
@@ -43,6 +62,12 @@ def count_weighted_edges(graph):
 
 
 def topological_ordering_weighted_graph(graph):
+    """
+    graph: adjacency list (as a dict) of the graph
+    candidates are nodes with no incoming edges. the algo goes through each candidate, removing the candidate and
+    its outgoing edges, and then checking the next node with incoming edges in the resulting graph.
+    returns a list of the ordered nodes
+    """
     order = []
     count = count_weighted_edges(graph)
     candidates = list(count[count["Edges_in"] == 0].index.values)
@@ -62,6 +87,13 @@ def topological_ordering_weighted_graph(graph):
 
 
 def recursive_backtrack(backtrack, source, node, path=[]):
+    """
+    backtrack: array of nodes used to reach the index-matched current node
+    source: integer of the source node of the graph
+    node: integer of the current node to start backtracking
+    path: list of the traversed node path
+    returns a character of the path travelled from node to source of form '0->2->3->4'
+    """
     path.append(node)
     node = backtrack[node]
     if node == source:
@@ -74,6 +106,12 @@ def recursive_backtrack(backtrack, source, node, path=[]):
 
 
 def longest_path(graph, source, sink):
+    """
+    graph: adjacency list (as a dict) of the graph
+    source: integer of the source node of the graph
+    sink: integer of the destination node of the graph
+    returns the score and corresponding longest path from source to sink of form (9, '0->2->3->4')
+    """
     order = topological_ordering_weighted_graph(graph)
     scores = [-math.inf] * (sink+1)
     scores[source] = 0
@@ -89,7 +127,7 @@ def longest_path(graph, source, sink):
 
 def main():
     """
-    Read the input file, parse the arguments, and finds the LCS between string1 and string2
+    Read the input file, parse the arguments, and returns the score and corresponding longest path
     """
     argv = list(sys.argv)
     input_source = None

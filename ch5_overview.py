@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 import copy
+import math
 
 # Text begins with the motivation of cracking the non-ribosomal code - non-ribosomal peptides (NRPs) produced by NRP
 # synthetase. Specifically, looking at the adenylation domains (A-domains) of NRP synthetase responsible for adding
@@ -149,14 +150,14 @@ def topological_ordering(graph):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def parse_weighted_graph(list_input):
+def parse_weighted_graph(line_input):
     graph = defaultdict(list)
-    for line in list_input:
-        split_input = line.split("->")
-        in_node = int(split_input[0].strip())
-        out_node = [int(x) for x in split_input[1].split(":")]
-        graph[in_node].append(out_node)
-        graph[out_node[0]]  # initialize a node (excluding weight) in case it only has edges coming in
+    for line in line_input:
+        edge = line.split("->")
+        node_a = int(edge[0])
+        target = [int(x) for x in edge[1].split(":")]
+        graph[node_a].append(target)
+        graph[target[0]]  # init in case it only has edges coming in
     return graph
 
 
@@ -193,24 +194,36 @@ def topological_ordering_weighted_graph(graph):
     return order
 
 
-# TODO: there should be a more elegant way than having to check entire graph to find all predecessors of node_b.
+def recursive_backtrack(backtrack, source, node, path=[]):
+    path.append(node)
+    node = backtrack[node]
+    if node == source:
+        path.append(source)
+        path.reverse()
+        path = "->".join([str(x) for x in path])
+        return path
+    else:
+        return recursive_backtrack(backtrack, source, node, path)
+
+
 def longest_path(graph, source, sink):
     order = topological_ordering_weighted_graph(graph)
-    scores = [0] * len(order)
-    for i in range(1, len(scores)):
-        node_b = order[i]
-        for node_a in graph:
-            if len(graph[node_a]) > 0:
-                for target in graph[node_a]:
-                    if target[0] == node_b:
-                        test_score = target[1] + scores[node_a]
-                        if test_score > scores[i]:
-                            scores[i] = test_score
-    return scores[sink]
+    scores = [-math.inf] * (sink+1)
+    scores[source] = 0
+    backtrack = [None] * len(scores)
+    for node in order:
+        for target in graph[node]:
+            if len(target) > 0:
+                if scores[node] + target[1] > scores[target[0]]:
+                    scores[target[0]] = scores[node] + target[1]
+                    backtrack[target[0]] = node
+    return scores[sink], recursive_backtrack(backtrack, source, sink)
+
 
 # While we have the longest path, we still need to reconstruct the LCS. Note that tracing a path from source to sink
 # may reach a dead end, but all paths starting from sink will lead to the source. Use a backtrack algorithm with
-# pointers that keeps track of the path (down=0, right=0, diagonal=1) in a matrix
+# pointers that keeps track of the path (down=0, right=0, diagonal=1) in a matrix representing the match between two
+# strings.
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -237,7 +250,6 @@ def lcs_backtrack(string1, string2):
     return backtrack
 
 
-
 def output_lcs(backtrack, string1, i, j):
 
     output = []
@@ -255,6 +267,9 @@ def output_lcs(backtrack, string1, i, j):
 
     recursive_output(backtrack, string1, i, j, output)
     return "".join(output)
+
+
+#
 
 
 # Example inputs
@@ -290,12 +305,12 @@ weighted_graph_input = ["0->1:7",
                         "1->4:1",
                         "3->4:3"]
 graph = parse_weighted_graph(weighted_graph_input)
-string1 = "AACCTTGG"
-string2 = "ACACTGTGA"
-# print(graph)
+# string1 = "AACCTTGG"
+# string2 = "ACACTGTGA"
+print(graph)
 # print(topological_ordering_weighted_graph(graph))
 # print(count_weighted_edges(graph))
-# print(longest_path(graph, 0, 4))
-backtrack = lcs_backtrack(string1, string2)
+print(longest_path(graph, 0, 4))
+# backtrack = lcs_backtrack(string1, string2)
 # print(backtrack)
-print(output_lcs(backtrack, string1, len(string1), len(string2)))
+# print(output_lcs(backtrack, string1, len(string1), len(string2)))
